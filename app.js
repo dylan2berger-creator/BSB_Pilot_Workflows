@@ -4,6 +4,7 @@
   var ALLOWED_OWNERS = ["BSB", "Boyd", "Both"];
   var EDIT_STORAGE_KEY = "bsb-pilot-edits-v1";
   var EDITABLE_FIELDS = ["head", "card", "slide"];
+  var STAGE_EDITABLE_FIELDS = ["when", "what", "owner", "exit", "note"];
 
   // ---------------------------------------------------------------------
   // Formatting: escape HTML, then apply `code` chips and **bold**.
@@ -351,6 +352,17 @@
       }
       if (hasOv) box._edited = true;
     });
+
+    clone.stages.forEach(function (stage) {
+      var editsKey = "stage:" + stage.id;
+      var hasOv = !!editsMap[editsKey];
+      var ov = editsMap[editsKey] || {};
+      STAGE_EDITABLE_FIELDS.forEach(function (f) {
+        if (typeof ov[f] === "string") stage[f] = ov[f];
+      });
+      if (hasOv) stage._edited = true;
+    });
+
     return clone;
   }
 
@@ -620,12 +632,20 @@
 
   function renderStagePanel(stage) {
     var html = "";
-    html += '<div class="panel-eyebrow">' + escapeHtml(stage.when) + "</div>";
-    html += '<h2 class="panel-title">' + formatText(stage.what) + "</h2>";
+    html += '<div class="panel-eyebrow" data-field="when"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(stage.when) : formatText(stage.when)) +
+      "</div>";
+    html += '<h2 class="panel-title" data-field="what"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(stage.what) : formatText(stage.what)) +
+      (stage._edited ? '<span class="edited-marker">EDITED</span>' : "") +
+      "</h2>";
     html += '<dl class="panel-meta-row">';
-    html += "<dt>Owner</dt><dd>" + formatText(stage.owner) + "</dd>";
-    html += "<dt>Exit criteria</dt><dd>" + formatText(stage.exit) + "</dd>";
-    html += "<dt>Note</dt><dd>" + formatText(stage.note) + "</dd>";
+    html += '<dt>Owner</dt><dd data-field="owner"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(stage.owner) : formatText(stage.owner)) + "</dd>";
+    html += '<dt>Exit criteria</dt><dd data-field="exit"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(stage.exit) : formatText(stage.exit)) + "</dd>";
+    html += '<dt>Note</dt><dd data-field="note"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(stage.note) : formatText(stage.note)) + "</dd>";
     html += "</dl>";
     return html;
   }
@@ -638,18 +658,21 @@
     return html;
   }
 
-  function attachEditableListeners(box) {
-    if (!editMode || !box) return;
+  // editsKey is a box's id for a box panel, or "stage:<id>" for a stage
+  // panel -- both are just keys into the same edits store. "step" and
+  // "question" only ever occur in a box panel; every other field (box
+  // head/card/slide, or stage when/what/owner/exit/note) is a plain
+  // string overlay keyed by its own data-field name.
+  function attachEditableListeners(editsKey) {
+    if (!editMode || !editsKey) return;
     var panelContentEl = document.getElementById("panel-content");
     var editableEls = panelContentEl.querySelectorAll("[contenteditable='true']");
     editableEls.forEach(function (el) {
       el.addEventListener("blur", function () {
         var field = el.dataset.field;
         var text = el.textContent;
-        var ov = edits[box.id] || (edits[box.id] = {});
-        if (field === "head" || field === "card" || field === "slide") {
-          ov[field] = text;
-        } else if (field === "step") {
+        var ov = edits[editsKey] || (edits[editsKey] = {});
+        if (field === "step") {
           var stepKey = parseStepKey(el.dataset.stepKey);
           var g = resolveGroupOverlay(ov, stepKey.groupKey);
           if (g) {
@@ -664,6 +687,8 @@
         } else if (field === "question") {
           ov.questions = ov.questions || {};
           ov.questions[el.dataset.index] = text;
+        } else {
+          ov[field] = text;
         }
         saveEdits(edits);
         content = applyEdits(baseContent, edits);
@@ -982,9 +1007,11 @@
     updatePanelPosition();
 
     if (entry.kind === "box") {
-      attachEditableListeners(boxById[id]);
+      attachEditableListeners(boxById[id].id);
       attachQuestionFormListeners(boxById[id]);
       attachStepListeners(boxById[id]);
+    } else if (entry.kind === "stage") {
+      attachEditableListeners("stage:" + stageById[entry.stageId].id);
     }
 
     var panel = document.getElementById("panel");

@@ -1,17 +1,20 @@
 (function () {
   "use strict";
 
+  // Filled in once the Supabase project from supabase-setup.sql exists.
+  var SUPABASE_URL = "REPLACE_WITH_SUPABASE_PROJECT_URL";
+  var SUPABASE_ANON_KEY = "REPLACE_WITH_SUPABASE_ANON_KEY";
+
+  var NAME_KEY = "bsb-viewer-name";
+  var MINE_KEY = "bsb-my-note-ids";
   var LOCAL_KEY = "bsb-pilot-notes-v1";
 
   var els = {};
-  var db = null;
-  var user = null;
-  var myId = null;
-  var isOwner = false;
-  var mode = "loading"; // "shared" | "local" | "loading"
-  var unsubscribe = null;
+  var client = null;
+  var mode = "loading"; // "shared" | "local"
   var currentContext = null; // { id, label } | null
   var localNotes = [];
+  var sharedNotes = [];
 
   function $(id) { return document.getElementById(id); }
 
@@ -31,7 +34,48 @@
   }
 
   // ---------------------------------------------------------------------
-  // Local (per-browser) fallback storage
+  // No-login identity: a per-browser display name, auto-generated so the
+  // first interaction isn't blocked by a prompt, renameable any time.
+  // ---------------------------------------------------------------------
+  function getViewerName() {
+    try {
+      var stored = window.localStorage.getItem(NAME_KEY);
+      if (stored) return stored;
+    } catch (e) { /* ignore */ }
+    var name = "Guest " + Math.floor(100 + Math.random() * 900);
+    try { window.localStorage.setItem(NAME_KEY, name); } catch (e) { /* ignore */ }
+    return name;
+  }
+
+  function setViewerName(name) {
+    name = (name || "").trim();
+    if (!name) return;
+    try { window.localStorage.setItem(NAME_KEY, name); } catch (e) { /* ignore */ }
+    if (mode === "shared") renderModeNote();
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function myNoteIds() {
+    try {
+      var raw = window.localStorage.getItem(MINE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+
+  function rememberMyNoteId(id) {
+    var ids = myNoteIds();
+    ids.push(id);
+    try { window.localStorage.setItem(MINE_KEY, JSON.stringify(ids)); } catch (e) { /* ignore */ }
+  }
+
+  // ---------------------------------------------------------------------
+  // Local (per-browser) fallback storage, used only if Supabase can't be
+  // reached (offline, misconfigured, blocked network).
   // ---------------------------------------------------------------------
   function loadLocalNotes() {
     try {
@@ -165,29 +209,20 @@
     }
   }
 
-  function renderSharedNotes(docs) {
-    updateBadge(docs.length);
-    if (!docs.length) { renderEmpty(); return; }
-
-    var ids = [];
-    docs.forEach(function (d) { if (d.authorId && ids.indexOf(d.authorId) === -1) ids.push(d.authorId); });
-
-    Promise.resolve(user ? user.profiles(ids) : {}).then(function (profiles) {
-      els.list.innerHTML = "";
-      docs.forEach(function (d) {
-        var profile = d.authorId ? profiles[d.authorId] : null;
-        var authorName = profile && profile.name ? profile.name : "Someone";
-        var avatarUrl = profile ? profile.avatarUrl : "";
-        var canDelete = !!(d.authorId && myId && d.authorId === myId) || isOwner;
-        els.list.appendChild(buildNoteEl(d, {
-          authorName: authorName,
-          avatarUrl: avatarUrl,
-          canDelete: canDelete,
-          onDelete: deleteSharedNote
-        }));
-      });
-      els.list.scrollTop = els.list.scrollHeight;
+  function renderShared() {
+    updateBadge(sharedNotes.length);
+    if (!sharedNotes.length) { renderEmpty(); return; }
+    var mine = myNoteIds();
+    els.list.innerHTML = "";
+    sharedNotes.forEach(function (n) {
+      els.list.appendChild(buildNoteEl(n, {
+        authorName: n.authorName,
+        avatarUrl: "",
+        canDelete: mine.indexOf(n.id) !== -1,
+        onDelete: deleteSharedNote
+      }));
     });
+    els.list.scrollTop = els.list.scrollHeight;
   }
 
   function renderLocalNotes() {
@@ -206,50 +241,82 @@
   }
 
   // ---------------------------------------------------------------------
-  // Shared (db) mode
+  // Shared (Supabase) mode -- open to anyone with the link, no login.
   // ---------------------------------------------------------------------
   function setModeNote(text) {
     els.modeNote.textContent = text;
   }
 
+  function renderModeNote() {
+    els.modeNote.innerHTML = "Shared with everyone viewing this page — posting as <strong>" +
+      escapeHtml(getViewerName()) + '</strong> <button type="button" id="notes-change-name" class="notes-change-name-btn">change</button>.';
+    var btn = document.getElementById("notes-change-name");
+    if (btn) {
+      btn.addEventListener("click", function () {
+        var next = window.prompt("Your name, for notes you add:", getViewerName());
+        if (next !== null) setViewerName(next);
+      });
+    }
+  }
+
+  function mapRow(row) {
+    return {
+      id: row.id,
+      text: row.text,
+      authorName: row.author_name || "Someone",
+      createdAt: row.created_at,
+      context: row.context_label ? { id: row.context_id, label: row.context_label } : null
+    };
+  }
+
+  function upsertLocalCache(note) {
+    var idx = sharedNotes.findIndex(function (n) { return n.id === note.id; });
+    if (idx === -1) sharedNotes.push(note); else sharedNotes[idx] = note;
+    sharedNotes.sort(function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); });
+  }
+
   function subscribeShared() {
-    var query = db.collection("notes").orderBy("createdAt", "asc").limit(500);
-    unsubscribe = query.onSnapshot(
-      function (snap) {
-        var docs = snap.docs.map(function (d) {
-          var data = d.data() || {};
-          return {
-            id: d.id,
-            text: typeof data.text === "string" ? data.text : "",
-            authorId: data.authorId || null,
-            createdAt: data.createdAt || new Date().toISOString(),
-            context: data.context || null
-          };
-        });
-        renderSharedNotes(docs);
-      },
-      function (err) {
-        if (err.code === "revoked") {
-          setModeNote("Notes are no longer available for this session.");
+    client.from("bsb_notes").select("*").order("created_at", { ascending: true }).limit(500)
+      .then(function (res) {
+        if (res.error) { setModeNote("Couldn't load shared notes."); return; }
+        sharedNotes = (res.data || []).map(mapRow);
+        renderShared();
+      });
+
+    client.channel("bsb_notes_changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bsb_notes" }, function (payload) {
+        if (payload.eventType === "DELETE") {
+          sharedNotes = sharedNotes.filter(function (n) { return n.id !== payload.old.id; });
         } else {
-          els.error.textContent = "Notes feed lost connection (" + err.code + ").";
+          upsertLocalCache(mapRow(payload.new));
         }
-      }
-    );
+        renderShared();
+      })
+      .subscribe();
   }
 
   function addSharedNote(text, context) {
-    return db.collection("notes").add({
+    return client.from("bsb_notes").insert({
       text: text,
-      authorId: myId,
-      createdAt: new Date().toISOString(),
-      context: context
+      author_name: getViewerName(),
+      context_id: context ? context.id : null,
+      context_label: context ? context.label : null
+    }).select().single().then(function (res) {
+      if (res.error) throw res.error;
+      rememberMyNoteId(res.data.id);
+      upsertLocalCache(mapRow(res.data));
+      renderShared();
     });
   }
 
   function deleteSharedNote(note) {
-    db.collection("notes").doc(note.id).delete().catch(function () {
-      els.error.textContent = "Couldn't delete that note.";
+    client.from("bsb_notes").delete().eq("id", note.id).then(function (res) {
+      if (res.error) {
+        els.error.textContent = "Couldn't delete that note.";
+        return;
+      }
+      sharedNotes = sharedNotes.filter(function (n) { return n.id !== note.id; });
+      renderShared();
     });
   }
 
@@ -295,24 +362,11 @@
     els.error.textContent = "";
     var context = (currentContext && els.contextCheckbox.checked) ? currentContext : null;
 
-    var result;
-    if (mode === "shared") {
-      result = addSharedNote(text, context);
-    } else {
-      addLocalNote(text, context);
-      result = Promise.resolve();
-    }
+    var result = mode === "shared" ? addSharedNote(text, context) : (addLocalNote(text, context), Promise.resolve());
     result.then(function () {
       els.input.value = "";
-    }).catch(function (err) {
-      var code = err && err.code;
-      if (code === "quota_exceeded") {
-        els.error.textContent = "This session's note store is full.";
-      } else if (code === "resource_exhausted") {
-        els.error.textContent = "Too many notes too fast — try again in a moment.";
-      } else {
-        els.error.textContent = "Couldn't save that note — try again.";
-      }
+    }).catch(function () {
+      els.error.textContent = "Couldn't save that note — try again.";
     });
   }
 
@@ -350,29 +404,22 @@
     wire();
     setModeNote("Connecting…");
 
-    var claude = window.claude;
-    if (!claude || typeof claude.use !== "function") {
+    if (!window.supabase || typeof window.supabase.createClient !== "function" ||
+        SUPABASE_URL.indexOf("REPLACE_WITH") === 0) {
       startLocalMode();
       return;
     }
 
-    Promise.all([claude.use("db"), claude.use("user")]).then(function (res) {
-      db = res[0];
-      user = res[1];
-      if (!db) { startLocalMode(); return; }
-
-      var idPromise = user ? user.id() : Promise.resolve(null);
-      var ownerPromise = user ? user.isOwner() : Promise.resolve(false);
-      Promise.all([idPromise, ownerPromise]).then(function (r) {
-        myId = r[0];
-        isOwner = r[1];
-        mode = "shared";
-        setModeNote("Shared with everyone viewing this page.");
-        subscribeShared();
-      });
-    }).catch(function () {
+    try {
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {
       startLocalMode();
-    });
+      return;
+    }
+
+    mode = "shared";
+    renderModeNote();
+    subscribeShared();
   }
 
   function startLocalMode() {

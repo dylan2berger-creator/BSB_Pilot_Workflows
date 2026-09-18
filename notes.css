@@ -30,6 +30,16 @@
   font-size: 11px;
   color: var(--color-text-secondary);
 }
+.notes-change-name-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 .notes-list {
   flex-grow: 1;

@@ -82,7 +82,7 @@ window.BSB_CONTENT = {
       steps: [
         { text: "BSB receives the assignment notification via `CCCone` forwarded email." }
       ],
-      systems: ["CCCone"],
+      systems: [],
       questions: []
     },
     {
@@ -143,7 +143,7 @@ window.BSB_CONTENT = {
         { text: "Drop the one-hour call on assignments BSB is already working." },
         { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
       ],
-      systems: ["CCC"],
+      systems: [],
       questions: []
     },
     {
@@ -179,7 +179,7 @@ window.BSB_CONTENT = {
         { text: "Hours outside the messaging window don't count against the clock." },
         { text: "BSB calendar syncs manually with the `CCCone` calendar.", manual: true }
       ],
-      systems: ["CCCone"],
+      systems: [],
       questions: []
     },
     {
@@ -192,7 +192,7 @@ window.BSB_CONTENT = {
         { text: "No chasing; the assignment isn't cancelled after attempt four — BSB is still on it." },
         { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
       ],
-      systems: ["CCC"],
+      systems: [],
       questions: []
     },
     {
@@ -226,7 +226,7 @@ window.BSB_CONTENT = {
       steps: [
         { text: "BSB manually writes its contact activity into `CCC`.", manual: true }
       ],
-      systems: ["CCC"],
+      systems: [],
       questions: []
     },
     {
@@ -284,7 +284,7 @@ window.BSB_CONTENT = {
         { text: "If scheduled, update the `RO` and create the repair plan.", manual: true },
         { text: "The scheduled-arrive date stops BSB's follow-up via the BSB secure share app." }
       ],
-      systems: ["RO", "BSB Secure Share App"],
+      systems: [],
       questions: []
     },
     {
@@ -296,7 +296,7 @@ window.BSB_CONTENT = {
       steps: [
         { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
       ],
-      systems: ["CCC"],
+      systems: [],
       questions: []
     },
 
@@ -343,7 +343,7 @@ window.BSB_CONTENT = {
       steps: [
         { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
       ],
-      systems: ["CCC"],
+      systems: [],
       questions: []
     }
   ],

@@ -675,6 +675,17 @@ button {
   background: var(--color-surface);
   color: var(--color-text);
 }
+.day-kind-select {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 3px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
 .step-delete {
   flex-shrink: 0;
   border: none;

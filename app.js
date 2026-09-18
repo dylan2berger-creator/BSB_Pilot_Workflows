@@ -5,6 +5,7 @@
   var EDIT_STORAGE_KEY = "bsb-pilot-edits-v1";
   var EDITABLE_FIELDS = ["head", "card", "slide"];
   var STAGE_EDITABLE_FIELDS = ["when", "what", "owner", "exit", "note"];
+  var DAY_EDITABLE_FIELDS = ["label", "detail"];
 
   // ---------------------------------------------------------------------
   // Formatting: escape HTML, then apply `code` chips and **bold**.
@@ -363,6 +364,19 @@
       if (hasOv) stage._edited = true;
     });
 
+    clone.days.forEach(function (day) {
+      var editsKey = "day:" + day.day;
+      var hasOv = !!editsMap[editsKey];
+      var ov = editsMap[editsKey] || {};
+      DAY_EDITABLE_FIELDS.forEach(function (f) {
+        if (typeof ov[f] === "string") day[f] = ov[f];
+      });
+      if (typeof ov.kind === "string" && DAY_KINDS.indexOf(ov.kind) !== -1) {
+        day.kind = ov.kind;
+      }
+      if (hasOv) day._edited = true;
+    });
+
     return clone;
   }
 
@@ -650,11 +664,28 @@
     return html;
   }
 
+  var DAY_KINDS = ["auto", "human", "quiet"];
+
   function renderDayPanel(day) {
     var html = "";
-    html += '<div class="panel-eyebrow">Day ' + escapeHtml(day.day) + " · " + escapeHtml(day.kind) + "</div>";
-    html += '<h2 class="panel-title">' + formatText(day.label) + "</h2>";
-    html += "<p>" + formatText(day.detail) + "</p>";
+    html += '<div class="panel-eyebrow">Day ' + escapeHtml(day.day) + " · ";
+    if (editMode) {
+      html += '<select class="day-kind-select" data-day="' + day.day + '">';
+      DAY_KINDS.forEach(function (k) {
+        html += '<option value="' + k + '"' + (day.kind === k ? " selected" : "") + ">" + k + "</option>";
+      });
+      html += "</select>";
+    } else {
+      html += escapeHtml(day.kind);
+    }
+    html += "</div>";
+    html += '<h2 class="panel-title" data-field="label"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(day.label) : formatText(day.label)) +
+      (day._edited ? '<span class="edited-marker">EDITED</span>' : "") +
+      "</h2>";
+    html += '<p data-field="detail"' + editableAttr() + ">" +
+      (editMode ? escapeHtml(day.detail) : formatText(day.detail)) +
+      "</p>";
     return html;
   }
 
@@ -942,6 +973,34 @@
     }
   }
 
+  // ---------------------------------------------------------------------
+  // A day's kind (auto/human/quiet) drives its cadence-strip color, so it's
+  // edited via a select rather than free text -- same edit-mode gating as
+  // its label/detail (handled by attachEditableListeners via "day:<n>").
+  // ---------------------------------------------------------------------
+  function setDayKind(dayNumber, kind) {
+    if (DAY_KINDS.indexOf(kind) === -1) return;
+    var editsKey = "day:" + dayNumber;
+    var ov = edits[editsKey] || (edits[editsKey] = {});
+    ov.kind = kind;
+    saveEdits(edits);
+    content = applyEdits(baseContent, edits);
+    rebuildIndexes();
+    buildPanelOrder();
+    renderGrid();
+    renderCadence();
+    updateOpenQuestionsCount();
+  }
+
+  function attachDayKindListener(day) {
+    var select = document.querySelector(".day-kind-select");
+    if (select) {
+      select.addEventListener("change", function () {
+        setDayKind(day.day, select.value);
+      });
+    }
+  }
+
   function attachQuestionFormListeners(box) {
     var panelContentEl = document.getElementById("panel-content");
     var form = panelContentEl.querySelector("#add-question-form");
@@ -1012,6 +1071,9 @@
       attachStepListeners(boxById[id]);
     } else if (entry.kind === "stage") {
       attachEditableListeners("stage:" + stageById[entry.stageId].id);
+    } else if (entry.kind === "day" && day) {
+      attachEditableListeners("day:" + day.day);
+      attachDayKindListener(day);
     }
 
     var panel = document.getElementById("panel");

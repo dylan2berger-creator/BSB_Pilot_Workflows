@@ -38,12 +38,21 @@
     }
   }
 
-  function saveEdits(edits) {
+  // changedKey is the specific edits[] entry that just changed (a box id,
+  // "stage:<id>", or "day:<n>"), or null for a full wipe (Revert all).
+  // Always persists to this browser's localStorage; also broadcasts
+  // "bsb:edits-changed" so a hosted-only script can additionally push the
+  // change to a shared backend, without app.js knowing or caring whether
+  // one is listening.
+  function saveEdits(changedKey) {
     try {
       window.localStorage.setItem(EDIT_STORAGE_KEY, JSON.stringify(edits));
     } catch (e) {
       /* storage unavailable - edits stay in-memory only for this session */
     }
+    window.dispatchEvent(new CustomEvent("bsb:edits-changed", {
+      detail: { key: changedKey, value: changedKey ? edits[changedKey] : null }
+    }));
   }
 
   function clearEdits() {
@@ -721,7 +730,7 @@
         } else {
           ov[field] = text;
         }
-        saveEdits(edits);
+        saveEdits(editsKey);
         content = applyEdits(baseContent, edits);
         rebuildIndexes();
         buildPanelOrder();
@@ -738,7 +747,7 @@
   // they persist across reload and are included in "Download content.js".
   // ---------------------------------------------------------------------
   function commitQuestionChange(boxId) {
-    saveEdits(edits);
+    saveEdits(boxId);
     content = applyEdits(baseContent, edits);
     rebuildIndexes();
     buildPanelOrder();
@@ -822,7 +831,7 @@
   }
 
   function commitStepChange(boxId) {
-    saveEdits(edits);
+    saveEdits(boxId);
     content = applyEdits(baseContent, edits);
     rebuildIndexes();
     buildPanelOrder();
@@ -983,7 +992,7 @@
     var editsKey = "day:" + dayNumber;
     var ov = edits[editsKey] || (edits[editsKey] = {});
     ov.kind = kind;
-    saveEdits(edits);
+    saveEdits(editsKey);
     content = applyEdits(baseContent, edits);
     rebuildIndexes();
     buildPanelOrder();
@@ -1275,6 +1284,7 @@
   function revertAllEdits() {
     edits = {};
     clearEdits();
+    window.dispatchEvent(new CustomEvent("bsb:edits-changed", { detail: { key: null, value: null } }));
     content = applyEdits(baseContent, edits);
     rebuildIndexes();
     buildPanelOrder();
@@ -1444,6 +1454,44 @@
         closePanel();
       }
     });
+
+    // Fired by a hosted-only script (e.g. sync.js) when another viewer's
+    // edit arrives from the shared backend. null value means that key was
+    // deleted there (also used for a remote "Revert all", which arrives as
+    // one such event per key that got removed). Only re-renders the open
+    // panel if the change is actually for the card/stage/day on screen, so
+    // an edit elsewhere never yanks focus from someone mid-edit here.
+    window.addEventListener("bsb:remote-edit", function (e) {
+      var key = e.detail.key;
+      var value = e.detail.value;
+      if (value === null || typeof value === "undefined") {
+        delete edits[key];
+      } else {
+        edits[key] = value;
+      }
+      try {
+        window.localStorage.setItem(EDIT_STORAGE_KEY, JSON.stringify(edits));
+      } catch (err) { /* storage unavailable */ }
+      content = applyEdits(baseContent, edits);
+      rebuildIndexes();
+      buildPanelOrder();
+      renderGrid();
+      renderCadence();
+      updateOpenQuestionsCount();
+      if (currentOpenEditsKey() === key) {
+        openPanelById(currentPanelId, { skipFocus: true, skipHash: true });
+      }
+    });
+  }
+
+  function currentOpenEditsKey() {
+    if (!currentPanelId) return null;
+    var entry = panelOrder[panelIndexById[currentPanelId]];
+    if (!entry) return null;
+    if (entry.kind === "box") return entry.id;
+    if (entry.kind === "stage") return "stage:" + entry.stageId;
+    if (entry.kind === "day") return "day:" + entry.day;
+    return null;
   }
 
   function stepPanel(delta) {

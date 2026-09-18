@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSB Pilot Workflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div id="error-banner" class="error-banner" hidden role="alert"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-title">
+      <h1 id="meta-title"></h1>
+      <p id="meta-facts" class="topbar-facts"></p>
+    </div>
+    <div class="topbar-actions">
+      <button id="edit-toggle" class="btn btn-ghost" type="button" aria-pressed="false">Edit mode: Off</button>
+      <button id="open-questions-btn" class="btn btn-primary" type="button">
+        <span id="oq-count">0</span> Open Questions
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="grid-scroll">
+    <div id="grid" class="grid" role="table" aria-label="Process grid"></div>
+  </div>
+
+  <section class="cadence" aria-labelledby="cadence-heading">
+    <div class="cadence-header">
+      <h2 id="cadence-heading"></h2>
+      <ul class="cadence-legend">
+        <li><span class="legend-dot legend-auto"></span>Automated</li>
+        <li><span class="legend-dot legend-human"></span>Human touch</li>
+        <li><span class="legend-dot legend-quiet"></span>Quiet / in progress</li>
+      </ul>
+    </div>
+    <div id="cadence-strip" class="cadence-strip"></div>
+  </section>
+</main>
+
+<div id="panel-backdrop" class="panel-backdrop" hidden></div>
+<aside id="panel" class="panel" hidden aria-hidden="true">
+  <div class="panel-inner">
+    <div class="panel-topbar">
+      <div class="panel-position" id="panel-position"></div>
+      <button id="panel-close" class="btn btn-icon" type="button" aria-label="Close panel">&times;</button>
+    </div>
+    <div id="panel-content" class="panel-content"></div>
+    <div class="panel-nav">
+      <button id="panel-prev" class="btn btn-ghost" type="button">&larr; Previous</button>
+      <button id="panel-next" class="btn btn-ghost" type="button">Next &rarr;</button>
+    </div>
+  </div>
+</aside>
+
+<div id="modal-backdrop" class="modal-backdrop" hidden></div>
+<div id="questions-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-inner">
+    <div class="modal-header">
+      <h2 id="modal-title">Open Questions</h2>
+      <div class="modal-header-actions">
+        <button id="copy-questions" class="btn btn-ghost" type="button">Copy all</button>
+        <button id="modal-close" class="btn btn-icon" type="button" aria-label="Close">&times;</button>
+      </div>
+    </div>
+    <div id="modal-body" class="modal-body"></div>
+  </div>
+</div>
+
+<div id="copy-toast" class="toast" hidden>Copied to clipboard</div>
+
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

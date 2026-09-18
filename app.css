@@ -597,6 +597,74 @@ button {
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
+.question-body {
+  flex-grow: 1;
+}
+.new-marker {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+.question-delete {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  margin-top: 1px;
+}
+.question-delete:hover { color: var(--color-danger); }
+.no-questions {
+  color: var(--color-text-secondary);
+}
+.add-question-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.add-question-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 40px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.add-question-input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.add-question-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.add-question-owner {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
 .panel-meta-row {
   display: flex;
   flex-direction: column;

@@ -454,8 +454,9 @@ button {
   top: var(--topbar-h, 64px);
   right: 0;
   height: calc(100% - var(--topbar-h, 64px));
-  width: 420px;
+  width: 50vw;
   max-width: 92vw;
+  min-width: 320px;
   background: var(--color-surface);
   box-shadow: var(--shadow-panel);
   z-index: 101;

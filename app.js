@@ -366,7 +366,9 @@
     btn.dataset.panelId = box.id;
 
     var tags = [];
-    tags.push('<span class="tag">' + box.steps.length + " step" + (box.steps.length === 1 ? "" : "s") + "</span>");
+    if (box.steps.length) {
+      tags.push('<span class="tag">' + box.steps.length + " step" + (box.steps.length === 1 ? "" : "s") + "</span>");
+    }
     if (box.steps.some(function (s) { return s.manual; })) {
       tags.push('<span class="tag tag-manual">MANUAL</span>');
     }

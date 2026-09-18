@@ -246,6 +246,11 @@
           if (box.steps[idx]) box.steps[idx].text = ov.steps[idx];
         });
       }
+      if (ov.stepManual) {
+        Object.keys(ov.stepManual).forEach(function (idx) {
+          if (box.steps[idx]) box.steps[idx].manual = ov.stepManual[idx];
+        });
+      }
       if (ov.questions) {
         Object.keys(ov.questions).forEach(function (idx) {
           if (box.questions[idx]) box.questions[idx].q = ov.questions[idx];
@@ -449,7 +454,9 @@
         '<span data-field="step" data-index="' + i + '"' + editableAttr() + ">" +
         (editMode ? escapeHtml(step.text) : formatText(step.text)) +
         "</span>" +
-        (step.manual ? '<span class="step-manual">MANUAL</span>' : "") +
+        '<label class="step-manual-toggle">' +
+        '<input type="checkbox" class="step-manual-checkbox" data-index="' + i + '"' + (step.manual ? " checked" : "") + ">" +
+        "Manual</label>" +
         "</span></li>";
     });
     if (!box.steps.length) html += '<li><span class="step-body">No steps recorded.</span></li>';
@@ -580,6 +587,33 @@
     commitQuestionChange(boxId);
   }
 
+  // ---------------------------------------------------------------------
+  // Toggling a step's Manual flag. Always available (not gated by edit
+  // mode), stored the same way as other in-app changes.
+  // ---------------------------------------------------------------------
+  function setStepManual(boxId, stepIndex, manual) {
+    var ov = edits[boxId] || (edits[boxId] = {});
+    ov.stepManual = ov.stepManual || {};
+    ov.stepManual[stepIndex] = manual;
+    saveEdits(edits);
+    content = applyEdits(baseContent, edits);
+    rebuildIndexes();
+    buildPanelOrder();
+    renderGrid();
+    renderCadence();
+    updateOpenQuestionsCount();
+  }
+
+  function attachStepManualListeners(box) {
+    var panelContentEl = document.getElementById("panel-content");
+    var checkboxes = panelContentEl.querySelectorAll(".step-manual-checkbox");
+    checkboxes.forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        setStepManual(box.id, cb.dataset.index, cb.checked);
+      });
+    });
+  }
+
   function attachQuestionFormListeners(box) {
     var panelContentEl = document.getElementById("panel-content");
     var form = panelContentEl.querySelector("#add-question-form");
@@ -647,6 +681,7 @@
     if (entry.kind === "box") {
       attachEditableListeners(boxById[id]);
       attachQuestionFormListeners(boxById[id]);
+      attachStepManualListeners(boxById[id]);
     }
 
     var panel = document.getElementById("panel");

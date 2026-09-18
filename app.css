@@ -553,17 +553,27 @@ button {
   flex-shrink: 0;
   width: 18px;
 }
-.step-manual {
-  display: inline-block;
-  margin-left: 6px;
+.step-manual-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
   font-family: var(--font-mono);
   font-size: 10px;
-  background: var(--color-manual-bg);
-  color: var(--color-manual-text);
-  padding: 1px 5px;
-  border-radius: 3px;
-  vertical-align: middle;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+  cursor: pointer;
+}
+.step-manual-toggle:has(.step-manual-checkbox:checked) {
+  color: var(--color-manual-text);
+}
+.step-manual-checkbox {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-manual-text);
 }
 .panel-systems {
   display: flex;

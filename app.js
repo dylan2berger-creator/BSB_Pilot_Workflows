@@ -375,9 +375,6 @@
     if (box.questions.length) {
       tags.push('<span class="tag tag-questions">' + box.questions.length + " open</span>");
     }
-    if (box._edited) {
-      tags.push('<span class="tag edited-marker">EDITED</span>');
-    }
 
     btn.innerHTML =
       '<div class="card-head">' + formatText(box.head) + "</div>" +

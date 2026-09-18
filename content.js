@@ -70,9 +70,7 @@ window.BSB_CONTENT = {
       head: "Deciding Where The Car Goes",
       card: "Deciding where the car goes.",
       slide: "Deciding where the car goes.",
-      steps: [
-        { text: "Customer decides where to take the vehicle." }
-      ],
+      steps: [],
       systems: [],
       questions: []
     },
@@ -118,10 +116,7 @@ window.BSB_CONTENT = {
       head: "Text & Email With Video",
       card: "**Text and email:** with a video on why Gerber, and a link to schedule an estimate.",
       slide: "**Text and email:** With a video on why Gerber to schedule an estimate.",
-      steps: [
-        { text: "Customer gets a text and email with a video on why Gerber." },
-        { text: "Customer gets a link to schedule an estimate." }
-      ],
+      steps: [],
       systems: [],
       questions: []
     },
@@ -170,9 +165,7 @@ window.BSB_CONTENT = {
       head: "Books When It Suits Them",
       card: "Books when it suits them.",
       slide: "Books when it suits them.",
-      steps: [
-        { text: "Customer books the estimate appointment whenever it suits them." }
-      ],
+      steps: [],
       systems: [],
       questions: []
     },
@@ -221,9 +214,7 @@ window.BSB_CONTENT = {
       head: "Still Have Not Booked",
       card: "Still have not booked.",
       slide: "Still have not booked.",
-      steps: [
-        { text: "Customer still has not booked an estimate appointment." }
-      ],
+      steps: [],
       systems: [],
       questions: []
     },
@@ -268,11 +259,7 @@ window.BSB_CONTENT = {
       head: "Reviews & Authorizes Estimate",
       card: "**Receives message to view the estimate, authorize it and pick a drop-off date.**",
       slide: "**Receives message to view the estimate, authorize it and pick a drop-off date.**",
-      steps: [
-        { text: "Customer receives a message to view the estimate." },
-        { text: "Customer authorizes the estimate." },
-        { text: "Customer picks a drop-off date." }
-      ],
+      steps: [],
       systems: [],
       questions: []
     },
@@ -319,9 +306,7 @@ window.BSB_CONTENT = {
       head: "Hears From A Person Twice",
       card: "Hears from a person twice in the twelve days, not only from the automation.",
       slide: "Hears from a person twice in the twelve days, not only from the automation.",
-      steps: [
-        { text: "Customer hears from a live person twice across the twelve days, not only automation." }
-      ],
+      steps: [],
       systems: [],
       questions: []
     },

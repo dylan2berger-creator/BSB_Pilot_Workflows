@@ -236,21 +236,35 @@
   function applyEdits(base, editsMap) {
     var clone = JSON.parse(JSON.stringify(base));
     clone.boxes.forEach(function (box) {
+      // Always tag each original step with a stable index, whether or not
+      // this box has any edits yet -- the UI addresses steps by this key
+      // (e.g. for the delete button) even before a first edit exists.
+      box.steps.forEach(function (step, origIndex) { step.origIndex = origIndex; });
+
       var ov = editsMap[box.id];
       if (!ov) return;
       EDITABLE_FIELDS.forEach(function (f) {
         if (typeof ov[f] === "string") box[f] = ov[f];
       });
-      if (ov.steps) {
-        Object.keys(ov.steps).forEach(function (idx) {
-          if (box.steps[idx]) box.steps[idx].text = ov.steps[idx];
+      // Steps: text edits, manual toggle, and removal are all keyed by a
+      // step's ORIGINAL content.js index, which stays stable across every
+      // merge because this function always starts from a pristine clone of
+      // base -- never from a previously-merged array. New in-session steps
+      // are tracked separately (ov.addedSteps) and appended after.
+      var removedSteps = ov.removedSteps || [];
+      var survivingSteps = [];
+      box.steps.forEach(function (step) {
+        if (removedSteps.indexOf(step.origIndex) !== -1) return;
+        if (ov.steps && typeof ov.steps[step.origIndex] === "string") step.text = ov.steps[step.origIndex];
+        if (ov.stepManual && typeof ov.stepManual[step.origIndex] !== "undefined") step.manual = ov.stepManual[step.origIndex];
+        survivingSteps.push(step);
+      });
+      if (ov.addedSteps && ov.addedSteps.length) {
+        ov.addedSteps.forEach(function (as, ai) {
+          survivingSteps.push({ text: as.text, manual: !!as.manual, added: true, addedIndex: ai });
         });
       }
-      if (ov.stepManual) {
-        Object.keys(ov.stepManual).forEach(function (idx) {
-          if (box.steps[idx]) box.steps[idx].manual = ov.stepManual[idx];
-        });
-      }
+      box.steps = survivingSteps;
       if (ov.questions) {
         Object.keys(ov.questions).forEach(function (idx) {
           if (box.questions[idx]) box.questions[idx].q = ov.questions[idx];
@@ -450,17 +464,27 @@
 
     html += '<div class="panel-section"><h3>Steps</h3><ol class="panel-steps" id="edit-field-steps">';
     box.steps.forEach(function (step, i) {
+      var stepKey = step.added ? ("added:" + step.addedIndex) : ("orig:" + step.origIndex);
       html += '<li><span class="step-num">' + (i + 1) + '.</span><span class="step-body">' +
-        '<span data-field="step" data-index="' + i + '"' + editableAttr() + ">" +
+        '<span data-field="step" data-step-key="' + stepKey + '"' + editableAttr() + ">" +
         (editMode ? escapeHtml(step.text) : formatText(step.text)) +
         "</span>" +
         '<label class="step-manual-toggle">' +
-        '<input type="checkbox" class="step-manual-checkbox" data-index="' + i + '"' + (step.manual ? " checked" : "") + ">" +
+        '<input type="checkbox" class="step-manual-checkbox" data-step-key="' + stepKey + '"' + (step.manual ? " checked" : "") + ">" +
         "Manual</label>" +
+        '<button type="button" class="step-delete" data-step-key="' + stepKey + '" aria-label="Remove this step">&times;</button>' +
         "</span></li>";
     });
-    if (!box.steps.length) html += '<li><span class="step-body">No steps recorded.</span></li>';
-    html += "</ol></div>";
+    if (!box.steps.length) html += '<li class="no-steps"><span class="step-body">No steps recorded.</span></li>';
+    html += "</ol>";
+
+    html += '<form class="add-step-form" id="add-step-form">' +
+      '<input type="text" class="add-step-input" id="add-step-input" placeholder="Add a step&hellip;" required>' +
+      '<div class="add-step-row">' +
+      '<label class="step-manual-toggle"><input type="checkbox" id="add-step-manual">Manual</label>' +
+      '<button type="submit" class="btn btn-primary">Add step</button>' +
+      '</div></form>';
+    html += "</div>";
 
     if (box.systems.length) {
       html += '<div class="panel-section"><h3>Systems</h3><div class="panel-systems">';
@@ -533,8 +557,13 @@
         if (field === "head" || field === "card" || field === "slide") {
           ov[field] = text;
         } else if (field === "step") {
-          ov.steps = ov.steps || {};
-          ov.steps[el.dataset.index] = text;
+          var stepKey = parseStepKey(el.dataset.stepKey);
+          if (stepKey.added) {
+            if (ov.addedSteps && ov.addedSteps[stepKey.index]) ov.addedSteps[stepKey.index].text = text;
+          } else {
+            ov.steps = ov.steps || {};
+            ov.steps[stepKey.index] = text;
+          }
         } else if (field === "question") {
           ov.questions = ov.questions || {};
           ov.questions[el.dataset.index] = text;
@@ -588,13 +617,18 @@
   }
 
   // ---------------------------------------------------------------------
-  // Toggling a step's Manual flag. Always available (not gated by edit
-  // mode), stored the same way as other in-app changes.
+  // Creating, toggling and removing steps. All always available (not
+  // gated by edit mode), stored the same way as other in-app changes.
+  // Original (content.js) steps are addressed by their stable original
+  // index ("orig:N"); steps added in-session live in their own list
+  // ("added:N"), addressed by position within it.
   // ---------------------------------------------------------------------
-  function setStepManual(boxId, stepIndex, manual) {
-    var ov = edits[boxId] || (edits[boxId] = {});
-    ov.stepManual = ov.stepManual || {};
-    ov.stepManual[stepIndex] = manual;
+  function parseStepKey(key) {
+    var parts = String(key).split(":");
+    return { added: parts[0] === "added", index: Number(parts[1]) };
+  }
+
+  function commitStepChange(boxId) {
     saveEdits(edits);
     content = applyEdits(baseContent, edits);
     rebuildIndexes();
@@ -604,14 +638,68 @@
     updateOpenQuestionsCount();
   }
 
-  function attachStepManualListeners(box) {
+  function setStepManual(boxId, stepKeyRaw, manual) {
+    var stepKey = parseStepKey(stepKeyRaw);
+    var ov = edits[boxId] || (edits[boxId] = {});
+    if (stepKey.added) {
+      if (ov.addedSteps && ov.addedSteps[stepKey.index]) ov.addedSteps[stepKey.index].manual = manual;
+    } else {
+      ov.stepManual = ov.stepManual || {};
+      ov.stepManual[stepKey.index] = manual;
+    }
+    commitStepChange(boxId);
+  }
+
+  function addStep(boxId, text, manual) {
+    text = text.trim();
+    if (!text) return;
+    var ov = edits[boxId] || (edits[boxId] = {});
+    ov.addedSteps = ov.addedSteps || [];
+    ov.addedSteps.push({ text: text, manual: !!manual });
+    commitStepChange(boxId);
+    if (currentPanelId === boxId) {
+      openPanelById(boxId, { skipFocus: true, skipHash: true });
+      var input = document.getElementById("add-step-input");
+      if (input) input.focus();
+    }
+  }
+
+  function deleteStep(boxId, stepKeyRaw) {
+    var stepKey = parseStepKey(stepKeyRaw);
+    var ov = edits[boxId] || (edits[boxId] = {});
+    if (stepKey.added) {
+      if (ov.addedSteps) ov.addedSteps.splice(stepKey.index, 1);
+    } else {
+      ov.removedSteps = ov.removedSteps || [];
+      if (ov.removedSteps.indexOf(stepKey.index) === -1) ov.removedSteps.push(stepKey.index);
+    }
+    commitStepChange(boxId);
+    if (currentPanelId === boxId) {
+      openPanelById(boxId, { skipFocus: true, skipHash: true });
+    }
+  }
+
+  function attachStepListeners(box) {
     var panelContentEl = document.getElementById("panel-content");
-    var checkboxes = panelContentEl.querySelectorAll(".step-manual-checkbox");
-    checkboxes.forEach(function (cb) {
+    panelContentEl.querySelectorAll(".step-manual-checkbox").forEach(function (cb) {
       cb.addEventListener("change", function () {
-        setStepManual(box.id, cb.dataset.index, cb.checked);
+        setStepManual(box.id, cb.dataset.stepKey, cb.checked);
       });
     });
+    panelContentEl.querySelectorAll(".step-delete").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        deleteStep(box.id, btn.dataset.stepKey);
+      });
+    });
+    var form = panelContentEl.querySelector("#add-step-form");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var input = document.getElementById("add-step-input");
+        var manualCheckbox = document.getElementById("add-step-manual");
+        addStep(box.id, input.value, manualCheckbox.checked);
+      });
+    }
   }
 
   function attachQuestionFormListeners(box) {
@@ -681,7 +769,7 @@
     if (entry.kind === "box") {
       attachEditableListeners(boxById[id]);
       attachQuestionFormListeners(boxById[id]);
-      attachStepManualListeners(boxById[id]);
+      attachStepListeners(boxById[id]);
     }
 
     var panel = document.getElementById("panel");

@@ -525,6 +525,25 @@
     document.getElementById("panel-next").disabled = idx >= panelOrder.length - 1;
   }
 
+  // Fires whenever the detail panel opens, switches, or closes, carrying
+  // enough for another script (e.g. a hosted page's notes drawer) to know
+  // what's currently on screen without reaching into app.js internals.
+  // detail.id/kind/label are null when the panel just closed.
+  function dispatchPanelChange(entry) {
+    var label = null;
+    if (entry) {
+      if (entry.kind === "box") label = boxById[entry.id] ? boxById[entry.id].head : null;
+      else if (entry.kind === "stage") label = stageById[entry.stageId] ? stageById[entry.stageId].what : null;
+      else if (entry.kind === "day") {
+        var d = content.days.filter(function (x) { return "day-" + x.day === entry.id; })[0];
+        label = d ? d.label : null;
+      }
+    }
+    window.dispatchEvent(new CustomEvent("bsb:panel-change", {
+      detail: { id: entry ? entry.id : null, kind: entry ? entry.kind : null, label: label }
+    }));
+  }
+
   function openPanelById(id, opts) {
     opts = opts || {};
     var entry = panelOrder[panelIndexById[id]];
@@ -566,6 +585,7 @@
       var closeBtn = document.getElementById("panel-close");
       closeBtn.focus();
     }
+    dispatchPanelChange(entry);
   }
 
   function closePanel() {
@@ -581,6 +601,7 @@
     if (lastFocusedBeforePanel && lastFocusedBeforePanel.focus) {
       lastFocusedBeforePanel.focus();
     }
+    dispatchPanelChange(null);
   }
 
   // ---------------------------------------------------------------------
@@ -903,6 +924,18 @@
   }
 
   // ---------------------------------------------------------------------
+  // Keep the top bar's real height in a CSS var so the side panel and
+  // modal can sit below it instead of covering its buttons.
+  // ---------------------------------------------------------------------
+  function syncTopbarHeight() {
+    var topbar = document.querySelector(".topbar");
+    if (!topbar) return;
+    var banner = document.getElementById("error-banner");
+    var bannerHeight = banner && !banner.hidden ? banner.offsetHeight : 0;
+    document.documentElement.style.setProperty("--topbar-h", (bannerHeight + topbar.offsetHeight) + "px");
+  }
+
+  // ---------------------------------------------------------------------
   // Init
   // ---------------------------------------------------------------------
   function init() {
@@ -923,6 +956,9 @@
     updateOpenQuestionsCount();
     updateEditToggleUi();
     wireEvents();
+
+    syncTopbarHeight();
+    window.addEventListener("resize", syncTopbarHeight);
 
     var initialHash = window.location.hash.replace(/^#/, "");
     if (initialHash && panelIndexById[initialHash] !== undefined) {

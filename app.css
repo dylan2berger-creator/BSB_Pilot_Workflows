@@ -246,6 +246,13 @@ button {
 .grid > .cell:nth-last-child(-n+7) { border-bottom: none; }
 .grid > .cell:nth-child(7n) { border-right: none; }
 
+/* Emphasize the boundary between the "Assignment Follow-up" and "Call
+   Center takes it" stage columns (4th and 5th grid columns). */
+.grid > .stage-header:nth-child(4),
+.grid > .cell:nth-child(7n+4) {
+  border-right: 3px solid var(--color-accent);
+}
+
 .corner-cell {
   background: var(--color-surface);
 }

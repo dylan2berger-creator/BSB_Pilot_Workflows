@@ -741,57 +741,6 @@ button {
   justify-content: space-between;
   gap: 8px;
 }
-.step-group {
-  margin-bottom: 18px;
-}
-.step-group:last-child {
-  margin-bottom: 0;
-}
-.step-group-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.step-group-name {
-  margin-bottom: 8px;
-  cursor: text;
-  border-radius: 2px;
-  padding: 1px 2px;
-  margin-left: -2px;
-}
-.category-delete {
-  flex-shrink: 0;
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  line-height: 1;
-  padding: 0 2px;
-  margin-bottom: 8px;
-}
-.category-delete:hover { color: var(--color-danger); }
-.add-category-form {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--color-hairline);
-  display: flex;
-  gap: 8px;
-}
-.add-category-input {
-  flex-grow: 1;
-  font-family: var(--font-body);
-  font-size: 13px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-.add-category-input:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
-}
 .panel-meta-row {
   display: flex;
   flex-direction: column;

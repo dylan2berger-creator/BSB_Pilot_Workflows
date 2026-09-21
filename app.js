@@ -195,20 +195,6 @@
 
         var steps = validateSteps(box.steps, path + ".steps", errors);
 
-        var stepCategories = [];
-        if (Array.isArray(box.stepCategories)) {
-          box.stepCategories.forEach(function (cat, ci) {
-            if (!cat || typeof cat.name !== "string" || !cat.name) {
-              errors.push(path + ".stepCategories[" + ci + "].name is missing — category skipped.");
-              return;
-            }
-            stepCategories.push({
-              name: cat.name,
-              steps: validateSteps(cat.steps, path + ".stepCategories[" + ci + "].steps", errors)
-            });
-          });
-        }
-
         result.boxes.push({
           id: box.stage + "-" + box.lane,
           stage: box.stage,
@@ -218,8 +204,6 @@
           slide: typeof box.slide === "string" ? box.slide : "",
           quiet: !!box.quiet,
           steps: steps,
-          stepsLabel: typeof box.stepsLabel === "string" && box.stepsLabel ? box.stepsLabel : "Steps",
-          stepCategories: stepCategories,
           systems: Array.isArray(box.systems) ? box.systems.filter(function (s) { return typeof s === "string"; }) : [],
           questions: questions
         });
@@ -294,14 +278,10 @@
   function applyEdits(base, editsMap) {
     var clone = JSON.parse(JSON.stringify(base));
     clone.boxes.forEach(function (box) {
-      // Always tag each original step (in the default list and in every
-      // authored category) with a stable index, whether or not this box has
-      // any edits yet -- the UI addresses steps by this key even before a
-      // first edit exists.
+      // Always tag each original step with a stable index, whether or not
+      // this box has any edits yet -- the UI addresses steps by this key
+      // even before a first edit exists.
       box.steps.forEach(function (step, i) { step.origIndex = i; });
-      (box.stepCategories || []).forEach(function (cat) {
-        cat.steps.forEach(function (step, i) { step.origIndex = i; });
-      });
       box.questions.forEach(function (q, i) { q.origIndex = i; });
 
       var hasOv = !!editsMap[box.id];
@@ -311,45 +291,14 @@
         if (typeof ov[f] === "string") box[f] = ov[f];
       });
 
-      // Step groups: the box's own (default) step list, plus any authored
-      // step categories, plus any categories created live in-session.
-      // Categories are addressed by "cat:<original index>" (stable, since
-      // box.stepCategories is always a pristine clone of content.js) or
-      // "newcat:<index in ov.addedCategories>" for session-created ones.
-      var groups = [];
-
-      groups.push({
-        key: "default",
-        name: (typeof ov.defaultCategoryName === "string" && ov.defaultCategoryName) || box.stepsLabel || "Steps",
-        steps: mergeStepList(box.steps, { steps: ov.steps, stepManual: ov.stepManual, removedSteps: ov.removedSteps, addedSteps: ov.addedSteps })
+      // Steps: text edits, manual toggle, and removal are all keyed by a
+      // step's ORIGINAL content.js index, which stays stable across every
+      // merge because this function always starts from a pristine clone of
+      // base -- never from a previously-merged array. New in-session steps
+      // are tracked separately (ov.addedSteps) and appended after.
+      box.steps = mergeStepList(box.steps, {
+        steps: ov.steps, stepManual: ov.stepManual, removedSteps: ov.removedSteps, addedSteps: ov.addedSteps
       });
-
-      var removedCategories = ov.removedCategories || [];
-      (box.stepCategories || []).forEach(function (cat, ci) {
-        if (removedCategories.indexOf(ci) !== -1) return;
-        var co = (ov.categoryOverrides && ov.categoryOverrides[ci]) || null;
-        groups.push({
-          key: "cat:" + ci,
-          name: (co && typeof co.name === "string" && co.name) || cat.name,
-          steps: mergeStepList(cat.steps, co)
-        });
-      });
-
-      (ov.addedCategories || []).forEach(function (ac, ai) {
-        groups.push({
-          key: "newcat:" + ai,
-          name: ac.name,
-          steps: (ac.steps || []).map(function (s, si) {
-            return { text: s.text, manual: !!s.manual, added: true, addedIndex: si };
-          })
-        });
-      });
-
-      box.stepGroups = groups;
-      // Kept for the grid card's step-count/MANUAL tags, which only ever
-      // reflect the default (primary) list -- extra categories represent
-      // alternate/scenario-specific procedures, not additional work on top.
-      box.steps = groups[0].steps;
 
       // Questions: text/owner edits and removal are keyed by a question's
       // ORIGINAL index (stable for the same reason steps are); added
@@ -579,47 +528,28 @@
       (editMode ? escapeHtml(fieldValue(box, "card")) : formatText(box.card)) +
       "</p></div>";
 
-    html += '<div class="panel-section panel-steps-section">';
-    box.stepGroups.forEach(function (group) {
-      html += '<div class="step-group" data-group-key="' + group.key + '">';
-      html += '<div class="step-group-header">';
-      html += '<h3 class="step-group-name" data-category-key="' + group.key + '" contenteditable="true" spellcheck="false">' + escapeHtml(group.name) + "</h3>";
-      if (group.key !== "default") {
-        html += '<button type="button" class="category-delete" data-group-key="' + group.key + '" aria-label="Remove this category">&times;</button>';
-      }
-      html += "</div>";
-
-      html += '<ol class="panel-steps">';
-      group.steps.forEach(function (step, i) {
-        var subKey = step.added ? ("added:" + step.addedIndex) : ("orig:" + step.origIndex);
-        var stepKey = group.key + "|" + subKey;
-        html += '<li><span class="step-num">' + (i + 1) + '.</span><span class="step-body">' +
-          '<span data-field="step" data-step-key="' + stepKey + '"' + editableAttr() + ">" +
-          (editMode ? escapeHtml(step.text) : formatText(step.text)) +
-          "</span>" +
-          '<label class="step-manual-toggle">' +
-          '<input type="checkbox" class="step-manual-checkbox" data-step-key="' + stepKey + '"' + (step.manual ? " checked" : "") + ">" +
-          "Manual</label>" +
-          '<button type="button" class="step-delete" data-step-key="' + stepKey + '" aria-label="Remove this step">&times;</button>' +
-          "</span></li>";
-      });
-      if (!group.steps.length) html += '<li class="no-steps"><span class="step-body">No steps recorded.</span></li>';
-      html += "</ol>";
-
-      html += '<form class="add-step-form" data-group-key="' + group.key + '">' +
-        '<input type="text" class="add-step-input" placeholder="Add a step&hellip;" required>' +
-        '<div class="add-step-row">' +
-        '<label class="step-manual-toggle"><input type="checkbox" class="add-step-manual">Manual</label>' +
-        '<button type="submit" class="btn btn-primary">Add step</button>' +
-        '</div></form>';
-
-      html += "</div>";
+    html += '<div class="panel-section"><h3>Steps</h3><ol class="panel-steps" id="edit-field-steps">';
+    box.steps.forEach(function (step, i) {
+      var stepKey = step.added ? ("added:" + step.addedIndex) : ("orig:" + step.origIndex);
+      html += '<li><span class="step-num">' + (i + 1) + '.</span><span class="step-body">' +
+        '<span data-field="step" data-step-key="' + stepKey + '"' + editableAttr() + ">" +
+        (editMode ? escapeHtml(step.text) : formatText(step.text)) +
+        "</span>" +
+        '<label class="step-manual-toggle">' +
+        '<input type="checkbox" class="step-manual-checkbox" data-step-key="' + stepKey + '"' + (step.manual ? " checked" : "") + ">" +
+        "Manual</label>" +
+        '<button type="button" class="step-delete" data-step-key="' + stepKey + '" aria-label="Remove this step">&times;</button>' +
+        "</span></li>";
     });
+    if (!box.steps.length) html += '<li class="no-steps"><span class="step-body">No steps recorded.</span></li>';
+    html += "</ol>";
 
-    html += '<form class="add-category-form" id="add-category-form">' +
-      '<input type="text" class="add-category-input" id="add-category-input" placeholder="Add a step category&hellip;" required>' +
-      '<button type="submit" class="btn btn-ghost">Add category</button>' +
-      '</form>';
+    html += '<form class="add-step-form" id="add-step-form">' +
+      '<input type="text" class="add-step-input" id="add-step-input" placeholder="Add a step&hellip;" required>' +
+      '<div class="add-step-row">' +
+      '<label class="step-manual-toggle"><input type="checkbox" id="add-step-manual">Manual</label>' +
+      '<button type="submit" class="btn btn-primary">Add step</button>' +
+      '</div></form>';
     html += "</div>";
 
     if (box.systems.length) {
@@ -724,15 +654,12 @@
         var ov = edits[editsKey] || (edits[editsKey] = {});
         if (field === "step") {
           var stepKey = parseStepKey(el.dataset.stepKey);
-          var g = resolveGroupOverlay(ov, stepKey.groupKey);
-          if (g) {
-            if (g.owned) {
-              if (g.owned[stepKey.index]) g.owned[stepKey.index].text = text;
-            } else if (stepKey.added) {
-              if (g.addedSteps[stepKey.index]) g.addedSteps[stepKey.index].text = text;
-            } else {
-              g.steps[stepKey.index] = text;
-            }
+          if (stepKey.added) {
+            ov.addedSteps = ov.addedSteps || [];
+            if (ov.addedSteps[stepKey.index]) ov.addedSteps[stepKey.index].text = text;
+          } else {
+            ov.steps = ov.steps || {};
+            ov.steps[stepKey.index] = text;
           }
         } else if (field === "question") {
           var qKey = parseQuestionKey(el.dataset.questionKey);
@@ -827,55 +754,16 @@
   }
 
   // ---------------------------------------------------------------------
-  // Creating, editing, and removing step categories, and creating,
-  // toggling and removing steps within them. All always available (not
-  // gated by edit mode), stored the same way as other in-app changes.
-  //
-  // A step's full address is "<groupKey>|<orig:N|added:N>": groupKey is
-  // "default" (the box's own step list), "cat:N" (an authored category at
-  // content.js's stepCategories[N], stable since that array is always a
-  // pristine clone), or "newcat:N" (a category created in-session, at
-  // position N in ov.addedCategories). Within a group, "orig:N" addresses
-  // an original step by its stable index and "added:N" a step added to
-  // that group in-session; every step in a "newcat:N" group counts as
-  // "added" since the whole group is already edits-owned.
+  // Creating, editing, toggling manual, and removing steps within a box.
+  // Always available (not gated by edit mode, except text edits which
+  // follow the same edit-mode gating as everything else's text), stored
+  // the same way as other in-app changes. A step's address is "orig:<N>"
+  // (stable original index) or "added:<N>" (position in this box's
+  // addedSteps list) -- same scheme as questions.
   // ---------------------------------------------------------------------
   function parseStepKey(compoundKey) {
-    var parts = String(compoundKey).split("|");
-    var sub = (parts[1] || "").split(":");
-    return { groupKey: parts[0], added: sub[0] === "added", index: Number(sub[1]) };
-  }
-
-  // Resolves (creating as needed) the overlay object that a group's step
-  // edits live in. Returns { owned: stepsArray } for a fully edits-owned
-  // group (newcat), or { steps, stepManual, removedSteps, addedSteps } for
-  // one merged against a pristine base list (default / cat). Null for an
-  // unrecognized or already-deleted newcat group.
-  function resolveGroupOverlay(ov, groupKey) {
-    if (groupKey === "default") {
-      ov.steps = ov.steps || {};
-      ov.stepManual = ov.stepManual || {};
-      ov.removedSteps = ov.removedSteps || [];
-      ov.addedSteps = ov.addedSteps || [];
-      return { steps: ov.steps, stepManual: ov.stepManual, removedSteps: ov.removedSteps, addedSteps: ov.addedSteps };
-    }
-    if (groupKey.indexOf("cat:") === 0) {
-      var ci = groupKey.slice(4);
-      ov.categoryOverrides = ov.categoryOverrides || {};
-      ov.categoryOverrides[ci] = ov.categoryOverrides[ci] || {};
-      var co = ov.categoryOverrides[ci];
-      co.steps = co.steps || {};
-      co.stepManual = co.stepManual || {};
-      co.removedSteps = co.removedSteps || [];
-      co.addedSteps = co.addedSteps || [];
-      return co;
-    }
-    if (groupKey.indexOf("newcat:") === 0) {
-      var ni = Number(groupKey.slice(7));
-      if (!ov.addedCategories || !ov.addedCategories[ni]) return null;
-      return { owned: ov.addedCategories[ni].steps };
-    }
-    return null;
+    var parts = String(compoundKey).split(":");
+    return { added: parts[0] === "added", index: Number(parts[1]) };
   }
 
   function commitStepChange(boxId) {
@@ -888,100 +776,42 @@
     updateOpenQuestionsCount();
   }
 
-  function setStepManual(boxId, compoundKey, manual) {
-    var key = parseStepKey(compoundKey);
+  function setStepManual(boxId, stepKeyRaw, manual) {
+    var key = parseStepKey(stepKeyRaw);
     var ov = edits[boxId] || (edits[boxId] = {});
-    var g = resolveGroupOverlay(ov, key.groupKey);
-    if (!g) return;
-    if (g.owned) {
-      if (g.owned[key.index]) g.owned[key.index].manual = manual;
-    } else if (key.added) {
-      if (g.addedSteps[key.index]) g.addedSteps[key.index].manual = manual;
+    if (key.added) {
+      ov.addedSteps = ov.addedSteps || [];
+      if (ov.addedSteps[key.index]) ov.addedSteps[key.index].manual = manual;
     } else {
-      g.stepManual[key.index] = manual;
+      ov.stepManual = ov.stepManual || {};
+      ov.stepManual[key.index] = manual;
     }
     commitStepChange(boxId);
   }
 
-  function addStep(boxId, groupKey, text, manual) {
+  function addStep(boxId, text, manual) {
     text = text.trim();
     if (!text) return;
     var ov = edits[boxId] || (edits[boxId] = {});
-    var g = resolveGroupOverlay(ov, groupKey);
-    if (!g) return;
-    if (g.owned) {
-      g.owned.push({ text: text, manual: !!manual });
-    } else {
-      g.addedSteps.push({ text: text, manual: !!manual });
-    }
+    ov.addedSteps = ov.addedSteps || [];
+    ov.addedSteps.push({ text: text, manual: !!manual });
     commitStepChange(boxId);
     if (currentPanelId === boxId) {
       openPanelById(boxId, { skipFocus: true, skipHash: true });
-      var input = document.querySelector('.step-group[data-group-key="' + groupKey + '"] .add-step-input');
+      var input = document.getElementById("add-step-input");
       if (input) input.focus();
     }
   }
 
-  function deleteStep(boxId, compoundKey) {
-    var key = parseStepKey(compoundKey);
+  function deleteStep(boxId, stepKeyRaw) {
+    var key = parseStepKey(stepKeyRaw);
     var ov = edits[boxId] || (edits[boxId] = {});
-    var g = resolveGroupOverlay(ov, key.groupKey);
-    if (!g) return;
-    if (g.owned) {
-      g.owned.splice(key.index, 1);
-    } else if (key.added) {
-      g.addedSteps.splice(key.index, 1);
+    if (key.added) {
+      ov.addedSteps = ov.addedSteps || [];
+      ov.addedSteps.splice(key.index, 1);
     } else {
-      if (g.removedSteps.indexOf(key.index) === -1) g.removedSteps.push(key.index);
-    }
-    commitStepChange(boxId);
-    if (currentPanelId === boxId) {
-      openPanelById(boxId, { skipFocus: true, skipHash: true });
-    }
-  }
-
-  function renameCategory(boxId, groupKey, newName) {
-    newName = newName.trim();
-    if (!newName) return;
-    var ov = edits[boxId] || (edits[boxId] = {});
-    if (groupKey === "default") {
-      ov.defaultCategoryName = newName;
-    } else if (groupKey.indexOf("cat:") === 0) {
-      var ci = groupKey.slice(4);
-      ov.categoryOverrides = ov.categoryOverrides || {};
-      ov.categoryOverrides[ci] = ov.categoryOverrides[ci] || {};
-      ov.categoryOverrides[ci].name = newName;
-    } else if (groupKey.indexOf("newcat:") === 0) {
-      var ni = Number(groupKey.slice(7));
-      if (ov.addedCategories && ov.addedCategories[ni]) ov.addedCategories[ni].name = newName;
-    }
-    commitStepChange(boxId);
-  }
-
-  function addCategory(boxId, name) {
-    name = name.trim();
-    if (!name) return;
-    var ov = edits[boxId] || (edits[boxId] = {});
-    ov.addedCategories = ov.addedCategories || [];
-    ov.addedCategories.push({ name: name, steps: [] });
-    commitStepChange(boxId);
-    if (currentPanelId === boxId) {
-      openPanelById(boxId, { skipFocus: true, skipHash: true });
-      var input = document.getElementById("add-category-input");
-      if (input) input.focus();
-    }
-  }
-
-  function deleteCategory(boxId, groupKey) {
-    if (groupKey === "default") return;
-    var ov = edits[boxId] || (edits[boxId] = {});
-    if (groupKey.indexOf("cat:") === 0) {
-      var ci = Number(groupKey.slice(4));
-      ov.removedCategories = ov.removedCategories || [];
-      if (ov.removedCategories.indexOf(ci) === -1) ov.removedCategories.push(ci);
-    } else if (groupKey.indexOf("newcat:") === 0) {
-      var ni = Number(groupKey.slice(7));
-      if (ov.addedCategories) ov.addedCategories.splice(ni, 1);
+      ov.removedSteps = ov.removedSteps || [];
+      if (ov.removedSteps.indexOf(key.index) === -1) ov.removedSteps.push(key.index);
     }
     commitStepChange(boxId);
     if (currentPanelId === boxId) {
@@ -991,17 +821,6 @@
 
   function attachStepListeners(box) {
     var panelContentEl = document.getElementById("panel-content");
-
-    panelContentEl.querySelectorAll(".step-group-name").forEach(function (el) {
-      el.addEventListener("blur", function () {
-        renameCategory(box.id, el.dataset.categoryKey, el.textContent);
-      });
-    });
-    panelContentEl.querySelectorAll(".category-delete").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        deleteCategory(box.id, btn.dataset.groupKey);
-      });
-    });
     panelContentEl.querySelectorAll(".step-manual-checkbox").forEach(function (cb) {
       cb.addEventListener("change", function () {
         setStepManual(box.id, cb.dataset.stepKey, cb.checked);
@@ -1012,20 +831,13 @@
         deleteStep(box.id, btn.dataset.stepKey);
       });
     });
-    panelContentEl.querySelectorAll(".add-step-form").forEach(function (form) {
-      form.addEventListener("submit", function (e) {
+    var addForm = panelContentEl.querySelector("#add-step-form");
+    if (addForm) {
+      addForm.addEventListener("submit", function (e) {
         e.preventDefault();
-        var input = form.querySelector(".add-step-input");
-        var manualCheckbox = form.querySelector(".add-step-manual");
-        addStep(box.id, form.dataset.groupKey, input.value, manualCheckbox.checked);
-      });
-    });
-    var addCatForm = panelContentEl.querySelector("#add-category-form");
-    if (addCatForm) {
-      addCatForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var input = document.getElementById("add-category-input");
-        addCategory(box.id, input.value);
+        var input = document.getElementById("add-step-input");
+        var manualCheckbox = document.getElementById("add-step-manual");
+        addStep(box.id, input.value, manualCheckbox.checked);
       });
     }
   }
@@ -1411,25 +1223,6 @@
         out.push("        { text: " + jsString(st.text) + (st.manual ? ", manual: true" : "") + " }" + (si < b.steps.length - 1 ? "," : ""));
       });
       out.push("      ],");
-      var extraGroups = b.stepGroups ? b.stepGroups.slice(1) : [];
-      var defaultName = b.stepGroups ? b.stepGroups[0].name : "Steps";
-      if (defaultName !== "Steps") {
-        out.push("      stepsLabel: " + jsString(defaultName) + ",");
-      }
-      if (extraGroups.length) {
-        out.push("      stepCategories: [");
-        extraGroups.forEach(function (g, gi) {
-          out.push("        {");
-          out.push("          name: " + jsString(g.name) + ",");
-          out.push("          steps: [");
-          g.steps.forEach(function (st, si) {
-            out.push("            { text: " + jsString(st.text) + (st.manual ? ", manual: true" : "") + " }" + (si < g.steps.length - 1 ? "," : ""));
-          });
-          out.push("          ]");
-          out.push("        }" + (gi < extraGroups.length - 1 ? "," : ""));
-        });
-        out.push("      ],");
-      }
       out.push("      systems: [" + b.systems.map(jsString).join(", ") + "],");
       out.push("      questions: [");
       b.questions.forEach(function (q, qi) {

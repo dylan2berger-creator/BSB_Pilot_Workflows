@@ -32,7 +32,7 @@ window.BSB_CONTENT = {
     {
       id: "s3",
       when: "+6 hr, +16 hr",
-      what: "Estimate Follow-up",
+      what: "Assignment Follow-up",
       owner: "BodyShop Booster",
       exit: "Two more automated touches sent, 6 and 16 hours after the prior message.",
       note: "Hours outside the messaging window don't count against the clock. BSB calendar syncs manually with the `CCCone` calendar."
@@ -83,7 +83,13 @@ window.BSB_CONTENT = {
         { text: "BSB receives the assignment notification via `CCCone` forwarded email." }
       ],
       systems: [],
-      questions: []
+      questions: [
+        { q: "What specifically does BSB need to put in the note so that CSR and Call Center know not to work it", owner: "Boyd" },
+        { q: "Does BSB need to ignore supplement assignments?", owner: "Both" },
+        { q: "Does BSB need to handle assignments that come in that are already scheduled?", owner: "Both" },
+        { q: "How should BSB handle imported assignments?", owner: "Both" },
+        { q: "How should BSB handle open shop assignments (not from a DRP)?", owner: "Both" }
+      ]
     },
     {
       stage: "s1", lane: "shop",
@@ -180,7 +186,9 @@ window.BSB_CONTENT = {
         { text: "BSB calendar syncs manually with the `CCCone` calendar.", manual: true }
       ],
       systems: [],
-      questions: []
+      questions: [
+        { q: "What does BSB need to enter in CCCone in order for the estimator to take over", owner: "Both" }
+      ]
     },
     {
       stage: "s3", lane: "shop",
@@ -239,7 +247,9 @@ window.BSB_CONTENT = {
         { text: "The shop stays out of follow-up for the pilot." }
       ],
       systems: [],
-      questions: []
+      questions: [
+        { q: "Does the shop ignore assignments that have a callback reminder?", owner: "Boyd" }
+      ]
     },
     {
       stage: "s4", lane: "contact-center",

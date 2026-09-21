@@ -146,7 +146,8 @@
           what: typeof stage.what === "string" ? stage.what : stage.id,
           owner: typeof stage.owner === "string" ? stage.owner : "",
           exit: typeof stage.exit === "string" ? stage.exit : "",
-          note: typeof stage.note === "string" ? stage.note : ""
+          note: typeof stage.note === "string" ? stage.note : "",
+          light: !!stage.light
         });
       });
     } else {
@@ -402,7 +403,7 @@
     content.stages.forEach(function (stage) {
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "stage-header";
+      btn.className = "stage-header" + (stage.light ? " stage-header-light" : "");
       btn.dataset.panelId = "stage-" + stage.id;
       btn.innerHTML =
         '<div class="stage-when">' + formatText(stage.when) + "</div>" +
@@ -1191,7 +1192,8 @@
       out.push("      what: " + jsString(s.what) + ",");
       out.push("      owner: " + jsString(s.owner) + ",");
       out.push("      exit: " + jsString(s.exit) + ",");
-      out.push("      note: " + jsString(s.note));
+      out.push("      note: " + jsString(s.note) + (s.light ? "," : ""));
+      if (s.light) out.push("      light: true");
       out.push("    }" + (i < data.stages.length - 1 ? "," : ""));
     });
     out.push("  ],");

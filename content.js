@@ -51,7 +51,8 @@ window.BSB_CONTENT = {
       what: "Repair Follow-up",
       owner: "BodyShop Booster / Shop",
       exit: "Estimate closed and RO created, or follow-up continues per the day cadence.",
-      note: "Unclosed estimates get added to BSB's proactive reach-out cadence on days 1, 2, 5, 7, 9 and 11. A scheduled drop-off date stops BSB's follow-up via the BSB secure share app."
+      note: "Unclosed estimates get added to BSB's proactive reach-out cadence on days 1, 2, 5, 7, 9 and 11. A scheduled drop-off date stops BSB's follow-up via the BSB secure share app.",
+      light: true
     },
     {
       id: "s6",
@@ -59,7 +60,8 @@ window.BSB_CONTENT = {
       what: "Human touchpoints",
       owner: "Shop (CSR)",
       exit: "Customer has heard from a person at least twice across the twelve days.",
-      note: "CSR calls on day 3 and day 12 run alongside the automated cadence, not instead of it."
+      note: "CSR calls on day 3 and day 12 run alongside the automated cadence, not instead of it.",
+      light: true
     }
   ],
 

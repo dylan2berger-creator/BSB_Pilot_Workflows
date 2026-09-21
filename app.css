@@ -275,6 +275,8 @@ button {
   min-height: 96px;
 }
 .stage-header:hover { filter: brightness(1.08); }
+.stage-header-light { filter: brightness(1.3); }
+.stage-header-light:hover { filter: brightness(1.4); }
 .stage-header .stage-when {
   font-family: var(--font-mono);
   font-size: 11px;

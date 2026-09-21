@@ -246,10 +246,16 @@ button {
 .grid > .cell:nth-last-child(-n+7) { border-bottom: none; }
 .grid > .cell:nth-child(7n) { border-right: none; }
 
-/* Emphasize the boundary between the "Assignment Follow-up" and "Call
-   Center takes it" stage columns (4th and 5th grid columns). */
-.grid > .stage-header:nth-child(4),
-.grid > .cell:nth-child(7n+4) {
+/* Emphasize the boundary between the "Call Center takes it" and
+   "Repair Follow-up" stage columns (5th and 6th grid columns). The
+   header segment needs a light-colored line since --color-accent is
+   the same blue as the header's own background and would be invisible
+   there; the card-row segment uses the accent color against the
+   white/light cell background. */
+.grid > .stage-header:nth-child(5) {
+  border-right: 3px solid var(--color-stage-text);
+}
+.grid > .cell:nth-child(7n+5) {
   border-right: 3px solid var(--color-accent);
 }
 

@@ -1,10 +1,9 @@
 (function () {
   "use strict";
 
-  // Filled in once the Supabase project from supabase-setup.sql exists --
-  // same project/table as notes.js, both use the "bsb_edits" table here.
-  var SUPABASE_URL = "REPLACE_WITH_SUPABASE_PROJECT_URL";
-  var SUPABASE_ANON_KEY = "REPLACE_WITH_SUPABASE_ANON_KEY";
+  // Same Supabase project as notes.js -- this file only touches bsb_edits.
+  var SUPABASE_URL = "https://woxiufyxdvrfdhdbzjih.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_9DSKbmUvLyi9On_2PDFfrg_BxvDubjT";
 
   // Bridges app.js's local edits (localStorage, always-on) to a shared
   // Supabase table, open to anyone with the link -- no Claude account and

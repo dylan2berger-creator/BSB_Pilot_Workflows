@@ -1,9 +1,8 @@
 (function () {
   "use strict";
 
-  // Filled in once the Supabase project from supabase-setup.sql exists.
-  var SUPABASE_URL = "REPLACE_WITH_SUPABASE_PROJECT_URL";
-  var SUPABASE_ANON_KEY = "REPLACE_WITH_SUPABASE_ANON_KEY";
+  var SUPABASE_URL = "https://woxiufyxdvrfdhdbzjih.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_9DSKbmUvLyi9On_2PDFfrg_BxvDubjT";
 
   var NAME_KEY = "bsb-viewer-name";
   var MINE_KEY = "bsb-my-note-ids";

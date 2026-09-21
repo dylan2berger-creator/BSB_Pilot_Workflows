@@ -284,7 +284,6 @@
       box.steps.forEach(function (step, i) { step.origIndex = i; });
       box.questions.forEach(function (q, i) { q.origIndex = i; });
 
-      var hasOv = !!editsMap[box.id];
       var ov = editsMap[box.id] || {};
 
       EDITABLE_FIELDS.forEach(function (f) {
@@ -317,22 +316,18 @@
         });
       }
       box.questions = survivingQuestions;
-      if (hasOv) box._edited = true;
     });
 
     clone.stages.forEach(function (stage) {
       var editsKey = "stage:" + stage.id;
-      var hasOv = !!editsMap[editsKey];
       var ov = editsMap[editsKey] || {};
       STAGE_EDITABLE_FIELDS.forEach(function (f) {
         if (typeof ov[f] === "string") stage[f] = ov[f];
       });
-      if (hasOv) stage._edited = true;
     });
 
     clone.days.forEach(function (day) {
       var editsKey = "day:" + day.day;
-      var hasOv = !!editsMap[editsKey];
       var ov = editsMap[editsKey] || {};
       DAY_EDITABLE_FIELDS.forEach(function (f) {
         if (typeof ov[f] === "string") day[f] = ov[f];
@@ -340,7 +335,6 @@
       if (typeof ov.kind === "string" && DAY_KINDS.indexOf(ov.kind) !== -1) {
         day.kind = ov.kind;
       }
-      if (hasOv) day._edited = true;
     });
 
     return clone;
@@ -517,7 +511,6 @@
     html += '<span class="panel-lane-pill lane-' + box.lane + '">' + escapeHtml(lane ? lane.name : box.lane) + "</span>";
     html += '<h2 class="panel-title" id="edit-field-head" data-field="head"' + editableAttr() + ">" +
       (editMode ? escapeHtml(fieldValue(box, "head")) : formatText(box.head)) +
-      (box._edited ? '<span class="edited-marker">EDITED</span>' : "") +
       "</h2>";
 
     html += '<div class="panel-section" id="edit-field-card-wrap"><h3>Summary</h3><p id="edit-field-card" data-field="card"' + editableAttr() + ">" +
@@ -596,7 +589,6 @@
       "</div>";
     html += '<h2 class="panel-title" data-field="what"' + editableAttr() + ">" +
       (editMode ? escapeHtml(stage.what) : formatText(stage.what)) +
-      (stage._edited ? '<span class="edited-marker">EDITED</span>' : "") +
       "</h2>";
     html += '<dl class="panel-meta-row">';
     html += '<dt>Owner</dt><dd data-field="owner"' + editableAttr() + ">" +
@@ -626,7 +618,6 @@
     html += "</div>";
     html += '<h2 class="panel-title" data-field="label"' + editableAttr() + ">" +
       (editMode ? escapeHtml(day.label) : formatText(day.label)) +
-      (day._edited ? '<span class="edited-marker">EDITED</span>' : "") +
       "</h2>";
     html += '<p data-field="detail"' + editableAttr() + ">" +
       (editMode ? escapeHtml(day.detail) : formatText(day.detail)) +

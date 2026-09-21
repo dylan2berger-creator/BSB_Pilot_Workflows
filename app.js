@@ -520,10 +520,6 @@
       (box._edited ? '<span class="edited-marker">EDITED</span>' : "") +
       "</h2>";
 
-    html += '<p class="panel-quote" id="edit-field-slide" data-field="slide"' + editableAttr() + ">“" +
-      (editMode ? escapeHtml(fieldValue(box, "slide")) : formatText(box.slide)) +
-      "”</p>";
-
     html += '<div class="panel-section" id="edit-field-card-wrap"><h3>Summary</h3><p id="edit-field-card" data-field="card"' + editableAttr() + ">" +
       (editMode ? escapeHtml(fieldValue(box, "card")) : formatText(box.card)) +
       "</p></div>";

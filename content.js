@@ -48,7 +48,7 @@ window.BSB_CONTENT = {
     {
       id: "s5",
       when: "Days 1 to 12",
-      what: "Repair Follow-up",
+      what: "Estimate Follow-up",
       owner: "BodyShop Booster / Shop",
       exit: "Estimate closed and RO created, or follow-up continues per the day cadence.",
       note: "Unclosed estimates get added to BSB's proactive reach-out cadence on days 1, 2, 5, 7, 9 and 11. A scheduled drop-off date stops BSB's follow-up via the BSB secure share app.",
@@ -66,23 +66,25 @@ window.BSB_CONTENT = {
   ],
 
   boxes: [
-    // ---------- Stage 1: Assignment created ----------
     {
       stage: "s1", lane: "customer",
       head: "Deciding Where The Car Goes",
       card: "Deciding where the car goes.",
       slide: "Deciding where the car goes.",
-      steps: [],
+      steps: [
+      ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s1", lane: "bsb",
       head: "Gets The Assignment Notification",
-      card: "Booster gets the assignment notification via `CCCone` forwarded email.",
+      card: "Booster gets the assignment notification via CCCone forwarded email.",
       slide: "Booster gets the assignment notification via CCCone forwarded email.",
       steps: [
-        { text: "BSB receives the assignment notification via `CCCone` forwarded email." }
+        { text: "BSB receives the assignment notification via CCCone forwarded email." },
+        { text: "BSB adds a 24hour callback and a note to the assignment", manual: true }
       ],
       systems: [],
       questions: [
@@ -95,97 +97,104 @@ window.BSB_CONTENT = {
     },
     {
       stage: "s1", lane: "shop",
-      quiet: true,
-      head: "No Action",
+      head: "Assignment Received. No Action.",
       card: "No action.",
       slide: "No action.",
+      quiet: true,
       steps: [
         { text: "No action expected from the shop at this stage." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s1", lane: "contact-center",
-      quiet: true,
       head: "No Action",
       card: "No action.",
       slide: "No action.",
+      quiet: true,
       steps: [
         { text: "No action expected from the Contact Center at this stage." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
-
-    // ---------- Stage 2: First contact ----------
     {
       stage: "s2", lane: "customer",
       head: "Text & Email With Video",
-      card: "**Text and email:** with a video on why Gerber, and a link to schedule an estimate.",
+      card: "Receives text and email with a video on why Gerber, and a link to schedule an estimate.",
       slide: "**Text and email:** With a video on why Gerber to schedule an estimate.",
-      steps: [],
+      steps: [
+      ],
       systems: [],
-      questions: []
+      questions: [
+        { q: "Is the content of the message and video finalized?", owner: "Both" }
+      ]
     },
     {
       stage: "s2", lane: "bsb",
       head: "Automated Text & Email",
-      card: "**Automated text & email:** contacts the customer within 90 seconds, 7 days a week.",
+      card: "Contacts the customer within 90 seconds, 7 days a week.",
       slide: "**Automated text & email:** Contacts the customer within 90 seconds, 7 days a week. Messaging hours run 7am to 9pm in the shop's local time zone.",
       steps: [
         { text: "BSB contacts the customer within 90 seconds, 7 days a week." },
-        { text: "Messaging hours run 7am to 9pm in the shop's local time zone." }
+        { text: "Messaging hours run 7am to 9pm in the shop's local time zone." },
+        { text: "BSB adds activity log to autoverse", manual: true }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s2", lane: "shop",
-      quiet: true,
-      head: "No Action — BSB Owns First 24 Hours",
-      card: "**No action:** BSB owns the first 24 hours. Handle inbound dials from the customer as needed.",
+      head: "No Action - BSB Owns First 24 Hours",
+      card: "BSB owns the first 24 hours. Handle inbound dials from the customer as needed.",
       slide: "**No action:** BSB owns the first 24 hours. Drop the one-hour call on assignments BSB is working. Handle inbound dials from the customer – update CCC as needed.",
+      quiet: true,
       steps: [
         { text: "BSB owns the first 24 hours; no proactive shop action." },
-        { text: "Drop the one-hour call on assignments BSB is already working." },
-        { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
+        { text: "Handle inbound dials from the customer and update `CCC` as needed." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s2", lane: "contact-center",
       head: "Inbound Only",
-      card: "**Inbound only:** take the calls the shop cannot. No proactive outreach on assignments.",
+      card: "Take the calls the shop cannot. No proactive outreach on assignments.",
       slide: "**Inbound only:** Take the calls the shop cannot. No proactive outreach on assignments.",
       steps: [
-        { text: "Contact Center takes the calls the shop cannot handle.", manual: true },
+        { text: "Contact Center takes the calls the shop cannot handle." },
         { text: "No proactive outreach on assignments." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
-
-    // ---------- Stage 3: Estimate Follow-up ----------
     {
       stage: "s3", lane: "customer",
       head: "Books When It Suits Them",
       card: "Books when it suits them.",
       slide: "Books when it suits them.",
-      steps: [],
+      steps: [
+      ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s3", lane: "bsb",
       head: "Two More Touches",
-      card: "**Two more touches:** 6 and 16 hours after the previous message. Manual sync of BSB calendar with `CCCone` calendar.",
+      card: "Text and email 6 and 16 hours after the previous message. Manual sync of BSB calendar with CCCone calendar.",
       slide: "**Two more touches:** 6 and 16 hours after the previous message (text & email); hours outside the window do not count against the clock. Manual sync of BSB calendar with CCCone calendar.",
       steps: [
         { text: "BSB sends two more touches (text & email) 6 and 16 hours after the previous message." },
         { text: "Hours outside the messaging window don't count against the clock." },
-        { text: "BSB calendar syncs manually with the `CCCone` calendar.", manual: true }
+        { text: "BSB calendar syncs manually with the CCCone calendar.", manual: true },
+        { text: "BSB adds activity log to autoverse and CCCone" }
       ],
       systems: [],
       questions: [
@@ -194,59 +203,61 @@ window.BSB_CONTENT = {
     },
     {
       stage: "s3", lane: "shop",
-      quiet: true,
-      head: "No Action — No Chasing",
-      card: "**No action:** no chasing, and no cancelling the assignment on attempt four. BSB is still on it.",
+      head: "No Action - No Chasing",
+      card: "No chasing, and no cancelling the assignment on attempt four. BSB is still on it.",
       slide: "**No action:** No chasing, and no cancelling the assignment on attempt four. BSB is still on it. Handle inbound dials from the customer – update CCC as needed.",
+      quiet: true,
       steps: [
         { text: "No chasing; the assignment isn't cancelled after attempt four — BSB is still on it." },
-        { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
+        { text: "Handle inbound dials from the customer and update `CCC` as needed." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s3", lane: "contact-center",
       head: "Inbound Only",
-      card: "**Inbound only:** take the calls the shop cannot. No proactive outreach on assignments.",
+      card: "Take the calls the shop cannot. No proactive outreach on assignments.",
       slide: "**Inbound only:** Take the calls the shop cannot. No proactive outreach on assignments.",
       steps: [
-        { text: "Contact Center takes the calls the shop cannot handle.", manual: true },
+        { text: "Contact Center takes the calls the shop cannot handle." },
         { text: "No proactive outreach on assignments." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
-
-    // ---------- Stage 4: Call Center takes it ----------
     {
       stage: "s4", lane: "customer",
       head: "Still Have Not Booked",
       card: "Still have not booked.",
       slide: "Still have not booked.",
-      steps: [],
+      steps: [
+      ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s4", lane: "bsb",
       head: "Mirrors Into CCC",
-      card: "**Mirrors into CCC:** BSB manually writes its contact activity into CCC.",
+      card: "BSB manually writes contact activity into CCC.",
       slide: "**Mirrors into CCC:** BSB manually writes its contact activity into CCC.",
       steps: [
         { text: "BSB manually writes its contact activity into `CCC`.", manual: true }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s4", lane: "shop",
-      head: "CSR/Estimator: Owns Follow-Up",
-      card: "**CSR/Estimator:** assignment follow-up belongs to the Call Center from here. The shop stays out of it for the pilot.",
+      head: "CSR/Estimator: Follow-Up on unbooked assignments",
+      card: "Typical assignment follow-up process",
       slide: "**CSR/Estimator:** Assignment follow-up belongs to the Call Center from here. The shop stays out of it for the pilot.",
       steps: [
-        { text: "Assignment follow-up moves to the Call Center from this point." },
-        { text: "The shop stays out of follow-up for the pilot." }
+        { text: "CSR follows standard assignment follow-up taking into account the touchpoints BSB had" }
       ],
       systems: [],
       questions: [
@@ -255,72 +266,76 @@ window.BSB_CONTENT = {
     },
     {
       stage: "s4", lane: "contact-center",
-      head: "Owns It From Here",
-      card: "**Owns it from here:** everything BSB has not booked by hour 24 comes here.",
+      head: "Typical Assignment Follow-up",
+      card: "Typical assignment follow-up process",
       slide: "**Owns it from here:** Everything BSB has not booked by hour 24 comes here.",
       steps: [
-        { text: "Everything BSB has not booked by hour 24 comes to the Contact Center." }
+        { text: "Unbooked assignments will be added back to the contact center queue" }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
-
-    // ---------- Stage 5: Repair Follow-up ----------
     {
       stage: "s5", lane: "customer",
       head: "Reviews & Authorizes Estimate",
-      card: "**Receives message to view the estimate, authorize it and pick a drop-off date.**",
+      card: "Receives message to view the estimate, authorize it and pick a drop-off date.",
       slide: "**Receives message to view the estimate, authorize it and pick a drop-off date.**",
-      steps: [],
+      steps: [
+      ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s5", lane: "bsb",
       head: "Ten Touch Points, Twelve Days",
-      card: "**Ten touch points, twelve days:** unclosed estimates get proactive reach-outs on days 1, 2, 5, 7, 9 and 11.",
+      card: "Unclosed estimates get proactive reach-outs on days 1, 2, 5, 7, 9 and 11.",
       slide: "**Ten touch points, twelve days:** Any estimate the shop does not close is added (manually for the pilot) to BSB for follow-up: proactive reach outs on days 1, 2, 5, 7, 9 and 11.",
       steps: [
         { text: "Unclosed estimates are manually added to BSB for follow-up (pilot process).", manual: true },
         { text: "BSB proactively reaches out on days 1, 2, 5, 7, 9 and 11." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s5", lane: "shop",
       head: "CSR/Estimator: Updates The RO",
-      card: "**CSR/Estimator:** if scheduled, update the RO and create the repair plan.",
+      card: "If scheduled, update the RO and create the repair plan.",
       slide: "**CSR/Estimator:** If scheduled, update the RO and create the repair plan. The scheduled-arrive date stops the BSB follow-up (via BSB secure share app).",
       steps: [
         { text: "If scheduled, update the `RO` and create the repair plan.", manual: true },
         { text: "The scheduled-arrive date stops BSB's follow-up via the BSB secure share app." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s5", lane: "contact-center",
-      quiet: true,
       head: "No Action",
-      card: "**No action:** handle inbound dials from the customer – update CCC as needed.",
+      card: "Handle inbound dials from the customer – update CCC as needed.",
       slide: "**No action:** Handle inbound dials from the customer – update CCC as needed.",
+      quiet: true,
       steps: [
-        { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
+        { text: "Handle inbound dials from the customer and update `CCC` as needed." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
-
-    // ---------- Stage 6: Human touchpoints ----------
     {
       stage: "s6", lane: "customer",
       head: "Hears From A Person Twice",
       card: "Hears from a person twice in the twelve days, not only from the automation.",
       slide: "Hears from a person twice in the twelve days, not only from the automation.",
-      steps: [],
+      steps: [
+      ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s6", lane: "bsb",
@@ -332,31 +347,34 @@ window.BSB_CONTENT = {
         { text: "The automated cadence keeps running around those two human calls." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s6", lane: "shop",
       head: "CSR Reaches Out",
-      card: "**CSR:** reaches out on day 3 and day 12.",
+      card: "CSR reaches out on day 3 and day 12.",
       slide: "**CSR:** CSR reaches out on day 3 and day 12.",
       steps: [
         { text: "CSR reaches out to the customer on day 3.", manual: true },
         { text: "CSR reaches out to the customer on day 12.", manual: true }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     },
     {
       stage: "s6", lane: "contact-center",
-      quiet: true,
       head: "No Action",
-      card: "**No action:** handle inbound dials from the customer – update CCC as needed.",
+      card: "Handle inbound dials from the customer – update CCC as needed.",
       slide: "**No action:** Handle inbound dials from the customer – update CCC as needed.",
+      quiet: true,
       steps: [
-        { text: "Handle inbound dials from the customer and update `CCC` as needed.", manual: true }
+        { text: "Handle inbound dials from the customer and update `CCC` as needed." }
       ],
       systems: [],
-      questions: []
+      questions: [
+      ]
     }
   ],
 

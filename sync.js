@@ -41,13 +41,23 @@
     }
 
     client.from(TABLE).upsert({ key: key, value: value }).then(function (res) {
-      if (res.error) { /* likely a network hiccup -- this edit still applies locally via app.js */ }
+      if (res.error) {
+        // This edit still applies locally via app.js, but other viewers
+        // won't see it until this succeeds -- most often a Supabase RLS
+        // policy on bsb_edits, or the table missing from the project's
+        // realtime publication. Logged (not shown in the UI) so it's
+        // diagnosable via devtools without alarming everyone mid-session.
+        console.error("[bsb sync] failed to save edit for \"" + key + "\":", res.error);
+      }
     });
   }
 
   function subscribe() {
     client.from(TABLE).select("*").then(function (res) {
-      if (res.error) return;
+      if (res.error) {
+        console.error("[bsb sync] failed to load edits from Supabase:", res.error);
+        return;
+      }
       (res.data || []).forEach(function (row) { dispatchRemote(row.key, row.value); });
     });
 
@@ -59,7 +69,14 @@
           dispatchRemote(payload.new.key, payload.new.value);
         }
       })
-      .subscribe();
+      // status is "SUBSCRIBED" once the realtime channel is actually live;
+      // "CHANNEL_ERROR"/"TIMED_OUT" here means other viewers' edits won't
+      // arrive live even though local edits still save fine to the table.
+      .subscribe(function (status) {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.error("[bsb sync] realtime subscription to \"" + TABLE + "\" failed:", status);
+        }
+      });
   }
 
   function init() {

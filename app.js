@@ -302,6 +302,7 @@
       (box.stepCategories || []).forEach(function (cat) {
         cat.steps.forEach(function (step, i) { step.origIndex = i; });
       });
+      box.questions.forEach(function (q, i) { q.origIndex = i; });
 
       var hasOv = !!editsMap[box.id];
       var ov = editsMap[box.id] || {};
@@ -350,16 +351,23 @@
       // alternate/scenario-specific procedures, not additional work on top.
       box.steps = groups[0].steps;
 
-      if (ov.questions) {
-        Object.keys(ov.questions).forEach(function (idx) {
-          if (box.questions[idx]) box.questions[idx].q = ov.questions[idx];
-        });
-      }
+      // Questions: text/owner edits and removal are keyed by a question's
+      // ORIGINAL index (stable for the same reason steps are); added
+      // questions live in their own list, addressed by position in it.
+      var removedQuestions = ov.removedQuestions || [];
+      var survivingQuestions = [];
+      box.questions.forEach(function (q) {
+        if (removedQuestions.indexOf(q.origIndex) !== -1) return;
+        if (ov.questions && typeof ov.questions[q.origIndex] === "string") q.q = ov.questions[q.origIndex];
+        if (ov.questionOwner && typeof ov.questionOwner[q.origIndex] === "string") q.owner = ov.questionOwner[q.origIndex];
+        survivingQuestions.push(q);
+      });
       if (ov.addedQuestions && ov.addedQuestions.length) {
         ov.addedQuestions.forEach(function (aq, ai) {
-          box.questions.push({ q: aq.q, owner: aq.owner, added: true, addedIndex: ai });
+          survivingQuestions.push({ q: aq.q, owner: aq.owner, added: true, addedIndex: ai });
         });
       }
+      box.questions = survivingQuestions;
       if (hasOv) box._edited = true;
     });
 
@@ -621,18 +629,20 @@
     }
 
     html += '<div class="panel-section"><h3>Open Questions' + (box.questions.length ? " (" + box.questions.length + ")" : "") + '</h3><ul class="panel-questions" id="edit-field-questions">';
-    box.questions.forEach(function (q, i) {
-      html += "<li>" + ownerTagHtml(q.owner);
-      if (q.added) {
-        html += '<span class="question-body">' +
-          '<span class="new-marker">NEW</span> ' + formatText(q.q) +
-          '</span>' +
-          '<button type="button" class="question-delete" data-added-index="' + q.addedIndex + '" aria-label="Remove this question">&times;</button>';
-      } else {
-        html += '<span class="question-body" data-field="question" data-index="' + i + '"' + editableAttr() + ">" +
-          (editMode ? escapeHtml(q.q) : formatText(q.q)) +
-          "</span>";
-      }
+    box.questions.forEach(function (q) {
+      var qKey = q.added ? ("added:" + q.addedIndex) : ("orig:" + q.origIndex);
+      html += "<li>";
+      html += '<select class="question-owner-select" data-question-key="' + qKey + '">';
+      ALLOWED_OWNERS.forEach(function (o) {
+        html += '<option value="' + o + '"' + (q.owner === o ? " selected" : "") + ">" + o + "</option>";
+      });
+      html += "</select>";
+      html += '<span class="question-body">';
+      if (q.added) html += '<span class="new-marker">NEW</span> ';
+      html += '<span data-field="question" data-question-key="' + qKey + '"' + editableAttr() + ">" +
+        (editMode ? escapeHtml(q.q) : formatText(q.q)) +
+        "</span></span>";
+      html += '<button type="button" class="question-delete" data-question-key="' + qKey + '" aria-label="Remove this question">&times;</button>';
       html += "</li>";
     });
     if (!box.questions.length) html += '<li class="no-questions">No open questions on this card.</li>';
@@ -725,8 +735,14 @@
             }
           }
         } else if (field === "question") {
-          ov.questions = ov.questions || {};
-          ov.questions[el.dataset.index] = text;
+          var qKey = parseQuestionKey(el.dataset.questionKey);
+          if (qKey.added) {
+            ov.addedQuestions = ov.addedQuestions || [];
+            if (ov.addedQuestions[qKey.index]) ov.addedQuestions[qKey.index].q = text;
+          } else {
+            ov.questions = ov.questions || {};
+            ov.questions[qKey.index] = text;
+          }
         } else {
           ov[field] = text;
         }
@@ -742,10 +758,19 @@
   }
 
   // ---------------------------------------------------------------------
-  // Adding open questions during a live discussion. Always available
-  // (not gated by edit mode), stored the same way as edit-mode changes so
-  // they persist across reload and are included in "Download content.js".
+  // Creating, editing (text + owner), and removing open questions. All
+  // always available (not gated by edit mode, except text edits which
+  // follow the same edit-mode gating as everything else's text), stored
+  // the same way as other in-app changes. A question's address is
+  // "orig:<N>" (stable original index, for one of content.js's own
+  // questions) or "added:<N>" (position in this box's addedQuestions
+  // list, for one raised live) -- same scheme as steps.
   // ---------------------------------------------------------------------
+  function parseQuestionKey(key) {
+    var parts = String(key).split(":");
+    return { added: parts[0] === "added", index: Number(parts[1]) };
+  }
+
   function commitQuestionChange(boxId) {
     saveEdits(boxId);
     content = applyEdits(baseContent, edits);
@@ -754,11 +779,6 @@
     renderGrid();
     renderCadence();
     updateOpenQuestionsCount();
-    if (currentPanelId === boxId) {
-      openPanelById(boxId, { skipFocus: true, skipHash: true });
-      var input = document.getElementById("add-question-input");
-      if (input) input.focus();
-    }
   }
 
   function addQuestion(boxId, text, owner) {
@@ -769,12 +789,40 @@
     ov.addedQuestions = ov.addedQuestions || [];
     ov.addedQuestions.push({ q: text, owner: owner });
     commitQuestionChange(boxId);
+    if (currentPanelId === boxId) {
+      openPanelById(boxId, { skipFocus: true, skipHash: true });
+      var input = document.getElementById("add-question-input");
+      if (input) input.focus();
+    }
   }
 
-  function deleteAddedQuestion(boxId, addedIndex) {
-    var ov = edits[boxId];
-    if (!ov || !ov.addedQuestions) return;
-    ov.addedQuestions.splice(Number(addedIndex), 1);
+  function deleteQuestion(boxId, questionKeyRaw) {
+    var key = parseQuestionKey(questionKeyRaw);
+    var ov = edits[boxId] || (edits[boxId] = {});
+    if (key.added) {
+      ov.addedQuestions = ov.addedQuestions || [];
+      ov.addedQuestions.splice(key.index, 1);
+    } else {
+      ov.removedQuestions = ov.removedQuestions || [];
+      if (ov.removedQuestions.indexOf(key.index) === -1) ov.removedQuestions.push(key.index);
+    }
+    commitQuestionChange(boxId);
+    if (currentPanelId === boxId) {
+      openPanelById(boxId, { skipFocus: true, skipHash: true });
+    }
+  }
+
+  function setQuestionOwner(boxId, questionKeyRaw, owner) {
+    if (ALLOWED_OWNERS.indexOf(owner) === -1) return;
+    var key = parseQuestionKey(questionKeyRaw);
+    var ov = edits[boxId] || (edits[boxId] = {});
+    if (key.added) {
+      ov.addedQuestions = ov.addedQuestions || [];
+      if (ov.addedQuestions[key.index]) ov.addedQuestions[key.index].owner = owner;
+    } else {
+      ov.questionOwner = ov.questionOwner || {};
+      ov.questionOwner[key.index] = owner;
+    }
     commitQuestionChange(boxId);
   }
 
@@ -1021,10 +1069,14 @@
         addQuestion(box.id, input.value, ownerSelect.value);
       });
     }
-    var deleteButtons = panelContentEl.querySelectorAll(".question-delete");
-    deleteButtons.forEach(function (btn) {
+    panelContentEl.querySelectorAll(".question-delete").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        deleteAddedQuestion(box.id, btn.dataset.addedIndex);
+        deleteQuestion(box.id, btn.dataset.questionKey);
+      });
+    });
+    panelContentEl.querySelectorAll(".question-owner-select").forEach(function (sel) {
+      sel.addEventListener("change", function () {
+        setQuestionOwner(box.id, sel.dataset.questionKey, sel.value);
       });
     });
   }

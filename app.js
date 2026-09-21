@@ -256,11 +256,16 @@
   // both the box's default step list and each authored step category, so a
   // step's identity (and therefore every edit keyed by it) stays stable
   // across merges regardless of what's added or removed elsewhere.
+  function stepKeyOf(step) {
+    return step.added ? ("added:" + step.addedIndex) : ("orig:" + step.origIndex);
+  }
+
   function mergeStepList(baseSteps, overlay) {
     var removedSteps = (overlay && overlay.removedSteps) || [];
     var textOverlay = (overlay && overlay.steps) || {};
     var manualOverlay = (overlay && overlay.stepManual) || {};
     var addedSteps = (overlay && overlay.addedSteps) || [];
+    var stepOrder = (overlay && overlay.stepOrder) || null;
 
     var result = [];
     baseSteps.forEach(function (step) {
@@ -273,6 +278,24 @@
     addedSteps.forEach(function (as, ai) {
       result.push({ text: as.text, manual: !!as.manual, added: true, addedIndex: ai });
     });
+
+    // A saved order (from drag/move-up/move-down) is a list of step keys.
+    // Anything not mentioned in it -- most often a step added since the
+    // order was last saved -- falls back to the end, in its natural order.
+    if (stepOrder && stepOrder.length) {
+      var byKey = {};
+      result.forEach(function (s) { byKey[stepKeyOf(s)] = s; });
+      var ordered = [];
+      stepOrder.forEach(function (k) {
+        if (byKey[k]) { ordered.push(byKey[k]); delete byKey[k]; }
+      });
+      result.forEach(function (s) {
+        var k = stepKeyOf(s);
+        if (byKey[k]) { ordered.push(s); delete byKey[k]; }
+      });
+      result = ordered;
+    }
+
     return result;
   }
 
@@ -297,7 +320,8 @@
       // base -- never from a previously-merged array. New in-session steps
       // are tracked separately (ov.addedSteps) and appended after.
       box.steps = mergeStepList(box.steps, {
-        steps: ov.steps, stepManual: ov.stepManual, removedSteps: ov.removedSteps, addedSteps: ov.addedSteps
+        steps: ov.steps, stepManual: ov.stepManual, removedSteps: ov.removedSteps, addedSteps: ov.addedSteps,
+        stepOrder: ov.stepOrder
       });
 
       // Questions: text/owner edits and removal are keyed by a question's
@@ -528,6 +552,11 @@
         '<label class="step-manual-toggle">' +
         '<input type="checkbox" class="step-manual-checkbox" data-step-key="' + stepKey + '"' + (step.manual ? " checked" : "") + ">" +
         "Manual</label>" +
+        (editMode ?
+          '<span class="step-reorder">' +
+          '<button type="button" class="step-move-up" data-step-key="' + stepKey + '" aria-label="Move step up"' + (i === 0 ? " disabled" : "") + ">&uarr;</button>" +
+          '<button type="button" class="step-move-down" data-step-key="' + stepKey + '" aria-label="Move step down"' + (i === box.steps.length - 1 ? " disabled" : "") + ">&darr;</button>" +
+          "</span>" : "") +
         '<button type="button" class="step-delete" data-step-key="' + stepKey + '" aria-label="Remove this step">&times;</button>' +
         "</span></li>";
     });
@@ -807,11 +836,41 @@
     }
   }
 
+  // Swaps a step with its neighbor and saves the resulting key order as
+  // ov.stepOrder, read by mergeStepList on the next render.
+  function moveStep(boxId, stepKeyRaw, direction) {
+    var box = boxById[boxId];
+    if (!box) return;
+    var keys = box.steps.map(stepKeyOf);
+    var idx = keys.indexOf(stepKeyRaw);
+    var swapIdx = idx + direction;
+    if (idx === -1 || swapIdx < 0 || swapIdx >= keys.length) return;
+    var tmp = keys[idx];
+    keys[idx] = keys[swapIdx];
+    keys[swapIdx] = tmp;
+    var ov = edits[boxId] || (edits[boxId] = {});
+    ov.stepOrder = keys;
+    commitStepChange(boxId);
+    if (currentPanelId === boxId) {
+      openPanelById(boxId, { skipFocus: true, skipHash: true });
+    }
+  }
+
   function attachStepListeners(box) {
     var panelContentEl = document.getElementById("panel-content");
     panelContentEl.querySelectorAll(".step-manual-checkbox").forEach(function (cb) {
       cb.addEventListener("change", function () {
         setStepManual(box.id, cb.dataset.stepKey, cb.checked);
+      });
+    });
+    panelContentEl.querySelectorAll(".step-move-up").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        moveStep(box.id, btn.dataset.stepKey, -1);
+      });
+    });
+    panelContentEl.querySelectorAll(".step-move-down").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        moveStep(box.id, btn.dataset.stepKey, 1);
       });
     });
     panelContentEl.querySelectorAll(".step-delete").forEach(function (btn) {

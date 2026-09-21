@@ -732,6 +732,31 @@ button {
   vertical-align: middle;
 }
 .step-delete:hover { color: var(--color-danger); }
+.step-reorder {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.step-move-up, .step-move-down {
+  flex-shrink: 0;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.step-move-up:hover:not(:disabled), .step-move-down:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+.step-move-up:disabled, .step-move-down:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 .no-steps {
   color: var(--color-text-secondary);
 }

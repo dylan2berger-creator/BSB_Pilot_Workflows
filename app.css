@@ -340,7 +340,6 @@ button {
   transform: translateY(-1px);
 }
 .card.quiet {
-  background: var(--color-quiet-bg);
   color: var(--color-quiet-text);
 }
 .card-head {

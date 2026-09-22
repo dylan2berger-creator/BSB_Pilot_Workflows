@@ -339,9 +339,6 @@ button {
   box-shadow: var(--shadow-card-hover);
   transform: translateY(-1px);
 }
-.card.quiet {
-  color: var(--color-quiet-text);
-}
 .card-head {
   font-weight: 700;
   font-size: 13px;
@@ -353,7 +350,6 @@ button {
   line-height: 1.35;
   flex-grow: 1;
 }
-.card.quiet .card-summary { color: var(--color-quiet-text); }
 .card-tags {
   display: flex;
   gap: 6px;

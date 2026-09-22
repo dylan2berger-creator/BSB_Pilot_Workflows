@@ -84,25 +84,29 @@ window.BSB_CONTENT = {
       slide: "Booster gets the assignment notification via CCCone forwarded email.",
       steps: [
         { text: "BSB receives the assignment notification via CCCone forwarded email." },
-        { text: "BSB adds a 24hour callback and a note to the assignment", manual: true }
+        { text: "BSB adds a 24hour callback and a note to the assignment", manual: true },
+        { text: "For assignments that are already scheduled BSB still sends a message to the customer but it does not include a request to schedule" }
       ],
       systems: [],
       questions: [
         { q: "What specifically does BSB need to put in the note so that CSR and Call Center know not to work it", owner: "Boyd" },
-        { q: "Does BSB need to ignore supplement assignments?", owner: "Both" },
-        { q: "Does BSB need to handle assignments that come in that are already scheduled?", owner: "Both" },
-        { q: "How should BSB handle imported assignments?", owner: "Both" },
-        { q: "How should BSB handle open shop assignments (not from a DRP)?", owner: "Both" }
+        { q: "Does BSB need to ignore supplement assignments? BSB will filter by subject line = NEW Assignment and other metrics to make sure that the assignment is not unique", owner: "Both" },
+        { q: "Does BSB need to handle assignments that come in that are already scheduled?  BSB has logic to send assignments that already have something scheduled a message that does not ask for something to be scheduled. ", owner: "Both" },
+        { q: "How should BSB handle imported/downloaded assignment? Not handled by BSB", owner: "Both" },
+        { q: "How should BSB handle open shop assignments (not from a DRP)?  BSB won't handle these.", owner: "Both" },
+        { q: "How do we handle failure cases in the email forward to BSB?", owner: "Both" },
+        { q: "What is the expected volume of new assignments per pilot shop per day?", owner: "Both" },
+        { q: "What is the expected SLA for the manual BSB step to add a callback and an initial note? - target: TBD", owner: "Both" }
       ]
     },
     {
       stage: "s1", lane: "shop",
       head: "Assignment Received. No Action.",
-      card: "No action.",
+      card: "No new/different actions required from the shop (BSB handles new assignments shop and contact center handle the rest)",
       slide: "No action.",
       quiet: true,
       steps: [
-        { text: "No action expected from the shop at this stage." }
+        { text: "No action expected from the shop at this stage for assignments that BSB is handling." }
       ],
       systems: [],
       questions: [
@@ -111,7 +115,7 @@ window.BSB_CONTENT = {
     {
       stage: "s1", lane: "contact-center",
       head: "No Action",
-      card: "No action.",
+      card: "No new/different actions required from the contact center (BSB handles new assignments the contact center and shop handle the rest)",
       slide: "No action.",
       quiet: true,
       steps: [
@@ -130,7 +134,6 @@ window.BSB_CONTENT = {
       ],
       systems: [],
       questions: [
-        { q: "Is the content of the message and video finalized?", owner: "Both" }
       ]
     },
     {
@@ -141,7 +144,8 @@ window.BSB_CONTENT = {
       steps: [
         { text: "BSB contacts the customer within 90 seconds, 7 days a week." },
         { text: "Messaging hours run 7am to 9pm in the shop's local time zone." },
-        { text: "BSB adds activity log to autoverse", manual: true }
+        { text: "BSB adds activity log to autoverse", manual: true },
+        { text: "BSB adds a note to the assignment in CCCone contact center", manual: true }
       ],
       systems: [],
       questions: [
@@ -154,8 +158,7 @@ window.BSB_CONTENT = {
       slide: "**No action:** BSB owns the first 24 hours. Drop the one-hour call on assignments BSB is working. Handle inbound dials from the customer – update CCC as needed.",
       quiet: true,
       steps: [
-        { text: "BSB owns the first 24 hours; no proactive shop action." },
-        { text: "Handle inbound dials from the customer and update `CCC` as needed." }
+        { text: "BSB owns the first 24 hours; no proactive shop action." }
       ],
       systems: [],
       questions: [
@@ -168,7 +171,7 @@ window.BSB_CONTENT = {
       slide: "**Inbound only:** Take the calls the shop cannot. No proactive outreach on assignments.",
       steps: [
         { text: "Contact Center takes the calls the shop cannot handle." },
-        { text: "No proactive outreach on assignments." }
+        { text: "No proactive outreach on assignments being handled by BSB as noted in the file in CCCone." }
       ],
       systems: [],
       questions: [
@@ -193,12 +196,18 @@ window.BSB_CONTENT = {
       steps: [
         { text: "BSB sends two more touches (text & email) 6 and 16 hours after the previous message." },
         { text: "Hours outside the messaging window don't count against the clock." },
-        { text: "BSB calendar syncs manually with the CCCone calendar.", manual: true },
-        { text: "BSB adds activity log to autoverse and CCCone" }
+        { text: "BSB calendar syncs manually with the CCCone calendar - both ways.", manual: true },
+        { text: "BSB adds activity log to autoverse", manual: true },
+        { text: "BSB adds activity log to CCCone contact center notes", manual: true },
+        { text: "If the the customer schedules via the BSB link then BSB will enter the RO in CCCone", manual: true }
       ],
       systems: [],
       questions: [
-        { q: "What does BSB need to enter in CCCone in order for the estimator to take over", owner: "Both" }
+        { q: "What should the messaging hours be for the pilot?", owner: "Both" },
+        { q: "Need to correctly schedule estimates with the estimator that handles the carrier.", owner: "Both" },
+        { q: "Need to define an SLA for making sure that the BSB calendar mirrors the shop's calendar.", owner: "Both" },
+        { q: "What phone number should BSB include in the message - shop or contact center?", owner: "Both" },
+        { q: "What happens in the scenario where a customer calls into the shop or contact center but no repair major date event (repair plan created)?", owner: "Both" }
       ]
     },
     {
@@ -261,7 +270,6 @@ window.BSB_CONTENT = {
       ],
       systems: [],
       questions: [
-        { q: "Does the shop ignore assignments that have a callback reminder?", owner: "Boyd" }
       ]
     },
     {
@@ -279,7 +287,7 @@ window.BSB_CONTENT = {
     {
       stage: "s5", lane: "customer",
       head: "Reviews & Authorizes Estimate",
-      card: "Receives message to view the estimate, authorize it and pick a drop-off date.",
+      card: "Receives message to view the estimate and committ to scheduling vehicle drop off with the shop.",
       slide: "**Receives message to view the estimate, authorize it and pick a drop-off date.**",
       steps: [
       ],
@@ -294,7 +302,8 @@ window.BSB_CONTENT = {
       slide: "**Ten touch points, twelve days:** Any estimate the shop does not close is added (manually for the pilot) to BSB for follow-up: proactive reach outs on days 1, 2, 5, 7, 9 and 11.",
       steps: [
         { text: "Unclosed estimates are manually added to BSB for follow-up (pilot process).", manual: true },
-        { text: "BSB proactively reaches out on days 1, 2, 5, 7, 9 and 11." }
+        { text: "BSB proactively reaches out on days 1, 2, 5, 7, 9 and 11 asking the customer to commit to scheduling a drop-off." },
+        { text: "BSB in CCCone adds a note in the RO so that the shop knows that BSB is also contacting the customer", manual: true }
       ],
       systems: [],
       questions: [
@@ -302,12 +311,13 @@ window.BSB_CONTENT = {
     },
     {
       stage: "s5", lane: "shop",
-      head: "CSR/Estimator: Updates The RO",
-      card: "If scheduled, update the RO and create the repair plan.",
+      head: "CSR/Estimator/GM: Continued Follow-up",
+      card: "Shop front lines still follow-up with the customer but BSB is assisting",
       slide: "**CSR/Estimator:** If scheduled, update the RO and create the repair plan. The scheduled-arrive date stops the BSB follow-up (via BSB secure share app).",
       steps: [
-        { text: "If scheduled, update the `RO` and create the repair plan.", manual: true },
-        { text: "The scheduled-arrive date stops BSB's follow-up via the BSB secure share app." }
+        { text: "Review BSB portal - if the customer committed via BSB eSign/authorization to schedule then reach out to the customer and update the RO and create the repair plan taking into shop calendar, DDCP etc.", manual: true },
+        { text: "In parallel to BSB reaching out to the customer follow the typical cadence of reaching out to the customer, but take into account notes in the BSB portal.", manual: true },
+        { text: "Review BSB portal for customers that need follow-up", manual: true }
       ],
       systems: [],
       questions: [
@@ -348,6 +358,8 @@ window.BSB_CONTENT = {
       ],
       systems: [],
       questions: [
+        { q: "Emails to the shop should be to a distro vs an individual", owner: "Both" },
+        { q: "What is the best way for BSB to consider shop capacity when scheduling estimates and repairs? - Answer: not applicable because the shop will reach out to the customer to schedule same as they do today. ", owner: "Both" }
       ]
     },
     {
@@ -361,6 +373,7 @@ window.BSB_CONTENT = {
       ],
       systems: [],
       questions: [
+        { q: "Need to understand which specific users need access to BSB", owner: "Both" }
       ]
     },
     {

@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BSB Pilot Workflow</title>
+<script>
+  // This file is opened two different ways: locally via file:// (must
+  // stay fully standalone, zero network calls -- that's why it has no
+  // Supabase/sync code at all) and, since it also happens to sit at the
+  // repo root, served by GitHub Pages at the bare "/" URL. Anyone hitting
+  // it over http(s) almost certainly wants the synced, shareable page
+  // instead -- so redirect there, but only when not opened as a local
+  // file, so the standalone guarantee never breaks.
+  if (location.protocol !== "file:") {
+    location.replace("share.html" + location.hash + location.search);
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">

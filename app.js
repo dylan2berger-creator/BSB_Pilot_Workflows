@@ -190,7 +190,7 @@
               errors.push(path + ".questions[" + qi + "].owner \"" + owner + "\" is not one of BSB/Boyd/Both — question skipped.");
               return;
             }
-            questions.push({ q: q.q, owner: owner });
+            questions.push({ q: q.q, owner: owner, notes: typeof q.notes === "string" ? q.notes : "" });
           });
         }
 
@@ -333,11 +333,12 @@
         if (removedQuestions.indexOf(q.origIndex) !== -1) return;
         if (ov.questions && typeof ov.questions[q.origIndex] === "string") q.q = ov.questions[q.origIndex];
         if (ov.questionOwner && typeof ov.questionOwner[q.origIndex] === "string") q.owner = ov.questionOwner[q.origIndex];
+        if (ov.questionNotes && typeof ov.questionNotes[q.origIndex] === "string") q.notes = ov.questionNotes[q.origIndex];
         survivingQuestions.push(q);
       });
       if (ov.addedQuestions && ov.addedQuestions.length) {
         ov.addedQuestions.forEach(function (aq, ai) {
-          survivingQuestions.push({ q: aq.q, owner: aq.owner, added: true, addedIndex: ai });
+          survivingQuestions.push({ q: aq.q, owner: aq.owner, notes: aq.notes || "", added: true, addedIndex: ai });
         });
       }
       box.questions = survivingQuestions;
@@ -580,7 +581,8 @@
     html += '<div class="panel-section"><h3>Open Questions' + (box.questions.length ? " (" + box.questions.length + ")" : "") + '</h3><ul class="panel-questions" id="edit-field-questions">';
     box.questions.forEach(function (q) {
       var qKey = q.added ? ("added:" + q.addedIndex) : ("orig:" + q.origIndex);
-      html += "<li>";
+      html += '<li class="question-item">';
+      html += '<div class="question-row">';
       html += '<select class="question-owner-select" data-question-key="' + qKey + '">';
       ALLOWED_OWNERS.forEach(function (o) {
         html += '<option value="' + o + '"' + (q.owner === o ? " selected" : "") + ">" + o + "</option>";
@@ -592,6 +594,13 @@
         (editMode ? escapeHtml(q.q) : formatText(q.q)) +
         "</span></span>";
       html += '<button type="button" class="question-delete" data-question-key="' + qKey + '" aria-label="Remove this question">&times;</button>';
+      html += "</div>";
+      var notesId = "qnotes-" + box.id + "-" + qKey;
+      html += '<div class="question-notes">' +
+        '<label class="question-notes-label" for="' + notesId + '">Notes / Answer</label>' +
+        '<textarea class="question-notes-input" id="' + notesId + '" data-question-key="' + qKey + '" placeholder="Add notes or an answer&hellip;" rows="1">' +
+        escapeHtml(q.notes || "") +
+        "</textarea></div>";
       html += "</li>";
     });
     if (!box.questions.length) html += '<li class="no-questions">No open questions on this card.</li>';
@@ -770,6 +779,19 @@
     commitQuestionChange(boxId);
   }
 
+  function setQuestionNotes(boxId, questionKeyRaw, notes) {
+    var key = parseQuestionKey(questionKeyRaw);
+    var ov = edits[boxId] || (edits[boxId] = {});
+    if (key.added) {
+      ov.addedQuestions = ov.addedQuestions || [];
+      if (ov.addedQuestions[key.index]) ov.addedQuestions[key.index].notes = notes;
+    } else {
+      ov.questionNotes = ov.questionNotes || {};
+      ov.questionNotes[key.index] = notes;
+    }
+    commitQuestionChange(boxId);
+  }
+
   // ---------------------------------------------------------------------
   // Creating, editing, toggling manual, and removing steps within a box.
   // Always available (not gated by edit mode, except text edits which
@@ -936,6 +958,11 @@
     panelContentEl.querySelectorAll(".question-owner-select").forEach(function (sel) {
       sel.addEventListener("change", function () {
         setQuestionOwner(box.id, sel.dataset.questionKey, sel.value);
+      });
+    });
+    panelContentEl.querySelectorAll(".question-notes-input").forEach(function (ta) {
+      ta.addEventListener("blur", function () {
+        setQuestionNotes(box.id, ta.dataset.questionKey, ta.value);
       });
     });
   }
@@ -1274,7 +1301,9 @@
       out.push("      systems: [" + b.systems.map(jsString).join(", ") + "],");
       out.push("      questions: [");
       b.questions.forEach(function (q, qi) {
-        out.push("        { q: " + jsString(q.q) + ", owner: " + jsString(q.owner) + " }" + (qi < b.questions.length - 1 ? "," : ""));
+        out.push("        { q: " + jsString(q.q) + ", owner: " + jsString(q.owner) +
+          (q.notes ? ", notes: " + jsString(q.notes) : "") +
+          " }" + (qi < b.questions.length - 1 ? "," : ""));
       });
       out.push("      ]");
       out.push("    }" + (i < data.boxes.length - 1 ? "," : ""));

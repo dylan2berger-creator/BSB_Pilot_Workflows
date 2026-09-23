@@ -861,6 +861,11 @@ button {
   display: flex;
   flex-direction: column;
 }
+.modal-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .modal-header {
   display: flex;
   align-items: center;
@@ -876,6 +881,8 @@ button {
 .modal-body {
   padding: 8px 18px 18px;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 .modal-group {
   margin-top: 16px;

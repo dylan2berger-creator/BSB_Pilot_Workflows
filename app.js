@@ -598,7 +598,7 @@
       var notesId = "qnotes-" + box.id + "-" + qKey;
       html += '<div class="question-notes">' +
         '<label class="question-notes-label" for="' + notesId + '">Notes / Answer</label>' +
-        '<textarea class="question-notes-input" id="' + notesId + '" data-question-key="' + qKey + '" placeholder="Add notes or an answer&hellip;" rows="1">' +
+        '<textarea class="question-notes-input" id="' + notesId + '" data-question-key="' + qKey + '" placeholder="Add notes or an answer&hellip;" rows="2">' +
         escapeHtml(q.notes || "") +
         "</textarea></div>";
       html += "</li>";
@@ -1092,16 +1092,36 @@
       groupBoxes.forEach(function (box) {
         var lane = laneById[box.lane];
         box.questions.forEach(function (q) {
-          var item = document.createElement("button");
-          item.type = "button";
+          var qKey = q.added ? ("added:" + q.addedIndex) : ("orig:" + q.origIndex);
+
+          var item = document.createElement("div");
           item.className = "modal-question-item";
-          item.innerHTML =
+
+          var openBtn = document.createElement("button");
+          openBtn.type = "button";
+          openBtn.className = "modal-question-open";
+          openBtn.innerHTML =
             '<span class="modal-question-lane">' + escapeHtml(lane ? lane.name : box.lane) + "</span>" +
             "<span>" + (q.added ? '<span class="new-marker">NEW</span> ' : "") + formatText(q.q) + " " + ownerTagHtml(q.owner) + "</span>";
-          item.addEventListener("click", function () {
+          openBtn.addEventListener("click", function () {
             closeModal();
             openPanelById(box.id);
           });
+          item.appendChild(openBtn);
+
+          var notesId = "modal-qnotes-" + box.id + "-" + qKey;
+          var notesWrap = document.createElement("div");
+          notesWrap.className = "question-notes modal-question-notes";
+          notesWrap.innerHTML =
+            '<label class="question-notes-label" for="' + notesId + '">Notes / Answer</label>' +
+            '<textarea class="question-notes-input" id="' + notesId + '" rows="2" placeholder="Add notes or an answer&hellip;"></textarea>';
+          var ta = notesWrap.querySelector("textarea");
+          ta.value = q.notes || "";
+          ta.addEventListener("blur", function () {
+            setQuestionNotes(box.id, qKey, ta.value);
+          });
+          item.appendChild(notesWrap);
+
           group.appendChild(item);
         });
       });

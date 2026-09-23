@@ -900,20 +900,27 @@ button {
   color: var(--color-text-secondary);
 }
 .modal-question-item {
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 8px 4px;
+}
+.modal-question-open {
   width: 100%;
   text-align: left;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--color-hairline);
-  padding: 8px 4px;
+  padding: 0;
   font-size: 13px;
   color: var(--color-text);
   display: flex;
   gap: 8px;
   align-items: flex-start;
   font-family: inherit;
+  cursor: pointer;
 }
-.modal-question-item:hover { background: var(--color-surface-alt); }
+.modal-question-open:hover { color: var(--color-accent); }
+.modal-question-notes {
+  margin-left: 100px;
+}
 .modal-question-lane {
   font-family: var(--font-mono);
   font-size: 11px;

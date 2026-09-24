@@ -82,7 +82,7 @@
   function validateContent(raw) {
     var errors = [];
     var result = {
-      meta: { title: "BSB Pilot Workflow", facts: "" },
+      meta: { title: "BSB Pilot Workflow" },
       lanes: [],
       stages: [],
       boxes: [],
@@ -97,7 +97,6 @@
     // meta
     if (raw.meta && typeof raw.meta === "object") {
       result.meta.title = typeof raw.meta.title === "string" ? raw.meta.title : result.meta.title;
-      result.meta.facts = typeof raw.meta.facts === "string" ? raw.meta.facts : "";
     } else {
       errors.push("content.js: meta is missing or malformed — using fallback title/labels.");
     }
@@ -1244,8 +1243,7 @@
     out.push("window.BSB_CONTENT = {");
 
     out.push("  meta: {");
-    out.push("    title: " + jsString(data.meta.title) + ",");
-    out.push("    facts: " + jsString(data.meta.facts));
+    out.push("    title: " + jsString(data.meta.title));
     out.push("  },");
     out.push("");
 
@@ -1448,7 +1446,6 @@
     buildPanelOrder();
 
     document.getElementById("meta-title").textContent = content.meta.title;
-    document.getElementById("meta-facts").textContent = content.meta.facts;
 
     renderGrid();
     updateOpenQuestionsCount();

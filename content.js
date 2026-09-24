@@ -1,7 +1,6 @@
 window.BSB_CONTENT = {
   meta: {
-    title: "Who Contacts the Customer with BodyShop Booster On",
-    facts: "4 Lanes · 6 Stages · 24 Cards"
+    title: "BodyShop Booster Customer Journey's and Workflows"
   },
 
   lanes: [

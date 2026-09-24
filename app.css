@@ -263,7 +263,6 @@ button {
 }
 .journey {
   background: var(--color-page);
-  border: 1px solid var(--color-hairline);
   border-radius: var(--radius);
   padding: 18px 20px;
   margin-bottom: 16px;
@@ -288,7 +287,6 @@ button {
   display: flex;
   align-items: flex-start;
   width: max-content;
-  min-width: 100%;
   position: relative;
 }
 .journey-flow::before {

@@ -1,5 +1,5 @@
 :root {
-  --color-page: #F2F5F7;
+  --color-page: #FFFFFF;
   --color-surface: #FFFFFF;
   --color-surface-alt: #E8EDF1;
   --color-text: #0F1E2B;
@@ -479,75 +479,6 @@ button {
   opacity: 0.5;
 }
 
-/* ---------- Cadence strip ---------- */
-.cadence {
-  margin-top: 24px;
-}
-.cadence-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.cadence-header h2 {
-  font-size: 15px;
-  font-weight: 700;
-}
-.cadence-legend {
-  display: flex;
-  gap: 16px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-}
-.cadence-legend li { display: flex; align-items: center; gap: 6px; }
-.legend-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.legend-auto { background: var(--color-legend-auto); }
-.legend-human { background: var(--color-legend-human); }
-.legend-quiet { background: var(--color-legend-quiet); }
-
-.cadence-strip {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 8px;
-}
-.day-chip {
-  border: 1px solid var(--color-hairline);
-  border-top: 4px solid var(--chip-color, var(--color-legend-quiet));
-  background: var(--color-surface);
-  border-radius: var(--radius);
-  padding: 8px;
-  text-align: left;
-  font-family: inherit;
-  color: var(--color-text);
-  min-height: 74px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.day-chip:hover { box-shadow: var(--shadow-card-hover); }
-.day-chip .day-num {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.day-chip .day-label {
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
 /* ---------- Panel ---------- */
 .panel-backdrop, .modal-backdrop {
   position: fixed;
@@ -829,17 +760,6 @@ button {
   background: var(--color-surface);
   color: var(--color-text);
 }
-.day-kind-select {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 1px 4px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 3px;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-}
 .step-delete {
   flex-shrink: 0;
   border: none;
@@ -1047,9 +967,6 @@ button {
     max-width: 100%;
     height: 82vh;
     border-radius: var(--radius) var(--radius) 0 0;
-  }
-  .cadence-strip {
-    grid-template-columns: repeat(3, 1fr);
   }
   .topbar-inner { padding: 10px 14px; }
   .main { padding: 12px 14px 24px; }

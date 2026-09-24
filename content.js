@@ -1,8 +1,7 @@
 window.BSB_CONTENT = {
   meta: {
     title: "Who Contacts the Customer with BodyShop Booster On",
-    facts: "4 Lanes · 6 Stages · 24 Cards · 12-Day Cadence",
-    cadenceHeading: "The 12 Days"
+    facts: "4 Lanes · 6 Stages · 24 Cards"
   },
 
   lanes: [
@@ -389,21 +388,6 @@ window.BSB_CONTENT = {
       questions: [
       ]
     }
-  ],
-
-  days: [
-    { day: 1, kind: "auto", label: "Text + Email", detail: "Automated text and email cadence continues." },
-    { day: 2, kind: "auto", label: "Text + Email", detail: "Automated text and email cadence continues." },
-    { day: 3, kind: "human", label: "CSR Phone Call", detail: "CSR reaches out by phone — one of the two human touchpoints in the twelve days." },
-    { day: 4, kind: "quiet", label: "Quiet", detail: "No outreach scheduled." },
-    { day: 5, kind: "auto", label: "Text + Email", detail: "BSB proactive reach-out — one of the ten touch points for unclosed estimates." },
-    { day: 6, kind: "quiet", label: "Quiet", detail: "No outreach scheduled." },
-    { day: 7, kind: "auto", label: "Text + Email", detail: "BSB proactive reach-out — one of the ten touch points for unclosed estimates." },
-    { day: 8, kind: "quiet", label: "Quiet", detail: "No outreach scheduled." },
-    { day: 9, kind: "auto", label: "Text + Email", detail: "BSB proactive reach-out — one of the ten touch points for unclosed estimates." },
-    { day: 10, kind: "quiet", label: "Quiet", detail: "No outreach scheduled." },
-    { day: 11, kind: "auto", label: "Pullback Offer", detail: "The pullback offer goes out via text + email." },
-    { day: 12, kind: "human", label: "CSR Phone Call", detail: "CSR reaches out by phone — the second human touchpoint in the twelve days." }
   ],
 
   journeys: [

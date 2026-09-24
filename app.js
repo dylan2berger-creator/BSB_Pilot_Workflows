@@ -5,7 +5,6 @@
   var EDIT_STORAGE_KEY = "bsb-pilot-edits-v1";
   var EDITABLE_FIELDS = ["head", "card", "slide"];
   var STAGE_EDITABLE_FIELDS = ["when", "what", "owner", "exit", "note"];
-  var DAY_EDITABLE_FIELDS = ["label", "detail"];
 
   // ---------------------------------------------------------------------
   // Formatting: escape HTML, then apply `code` chips and **bold**.
@@ -83,11 +82,10 @@
   function validateContent(raw) {
     var errors = [];
     var result = {
-      meta: { title: "BSB Pilot Workflow", facts: "", cadenceHeading: "12-Day Cadence" },
+      meta: { title: "BSB Pilot Workflow", facts: "" },
       lanes: [],
       stages: [],
       boxes: [],
-      days: [],
       journeys: []
     };
 
@@ -100,7 +98,6 @@
     if (raw.meta && typeof raw.meta === "object") {
       result.meta.title = typeof raw.meta.title === "string" ? raw.meta.title : result.meta.title;
       result.meta.facts = typeof raw.meta.facts === "string" ? raw.meta.facts : "";
-      result.meta.cadenceHeading = typeof raw.meta.cadenceHeading === "string" ? raw.meta.cadenceHeading : result.meta.cadenceHeading;
     } else {
       errors.push("content.js: meta is missing or malformed — using fallback title/labels.");
     }
@@ -212,24 +209,6 @@
       });
     } else {
       errors.push("content.js: boxes is missing or not an array.");
-    }
-
-    // days
-    if (Array.isArray(raw.days)) {
-      raw.days.forEach(function (day, i) {
-        if (!day || typeof day.day === "undefined") {
-          errors.push("content.js: days[" + i + "].day is missing — day skipped.");
-          return;
-        }
-        result.days.push({
-          day: day.day,
-          kind: ["auto", "human", "quiet"].indexOf(day.kind) !== -1 ? day.kind : "quiet",
-          label: typeof day.label === "string" ? day.label : "",
-          detail: typeof day.detail === "string" ? day.detail : ""
-        });
-      });
-    } else {
-      errors.push("content.js: days is missing or not an array.");
     }
 
     // journeys (optional -- static customer-journey timelines shown above
@@ -386,17 +365,6 @@
       });
     });
 
-    clone.days.forEach(function (day) {
-      var editsKey = "day:" + day.day;
-      var ov = editsMap[editsKey] || {};
-      DAY_EDITABLE_FIELDS.forEach(function (f) {
-        if (typeof ov[f] === "string") day[f] = ov[f];
-      });
-      if (typeof ov.kind === "string" && DAY_KINDS.indexOf(ov.kind) !== -1) {
-        day.kind = ov.kind;
-      }
-    });
-
     return clone;
   }
 
@@ -419,9 +387,6 @@
           panelOrder.push({ id: boxId, kind: "box", stageId: stage.id, laneId: lane.id });
         }
       });
-    });
-    content.days.forEach(function (day) {
-      panelOrder.push({ id: "day-" + day.day, kind: "day", day: day.day });
     });
     panelIndexById = {};
     panelOrder.forEach(function (p, i) { panelIndexById[p.id] = i; });
@@ -582,29 +547,6 @@
   }
 
   // ---------------------------------------------------------------------
-  // Cadence strip
-  // ---------------------------------------------------------------------
-  var KIND_COLOR_VAR = { auto: "--color-legend-auto", human: "--color-legend-human", quiet: "--color-legend-quiet" };
-
-  function renderCadence() {
-    document.getElementById("cadence-heading").textContent = content.meta.cadenceHeading;
-    var strip = document.getElementById("cadence-strip");
-    strip.innerHTML = "";
-    content.days.forEach(function (day) {
-      var chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "day-chip";
-      chip.style.setProperty("--chip-color", "var(" + (KIND_COLOR_VAR[day.kind] || KIND_COLOR_VAR.quiet) + ")");
-      chip.dataset.panelId = "day-" + day.day;
-      chip.innerHTML =
-        '<div class="day-num">Day ' + escapeHtml(day.day) + "</div>" +
-        '<div class="day-label">' + formatText(day.label) + "</div>";
-      chip.addEventListener("click", function () { openPanelById(chip.dataset.panelId); });
-      strip.appendChild(chip);
-    });
-  }
-
-  // ---------------------------------------------------------------------
   // Panel rendering
   // ---------------------------------------------------------------------
   function ownerTagHtml(owner) {
@@ -731,30 +673,6 @@
     return html;
   }
 
-  var DAY_KINDS = ["auto", "human", "quiet"];
-
-  function renderDayPanel(day) {
-    var html = "";
-    html += '<div class="panel-eyebrow">Day ' + escapeHtml(day.day) + " · ";
-    if (editMode) {
-      html += '<select class="day-kind-select" data-day="' + day.day + '">';
-      DAY_KINDS.forEach(function (k) {
-        html += '<option value="' + k + '"' + (day.kind === k ? " selected" : "") + ">" + k + "</option>";
-      });
-      html += "</select>";
-    } else {
-      html += escapeHtml(day.kind);
-    }
-    html += "</div>";
-    html += '<h2 class="panel-title" data-field="label"' + editableAttr() + ">" +
-      (editMode ? escapeHtml(day.label) : formatText(day.label)) +
-      "</h2>";
-    html += '<p data-field="detail"' + editableAttr() + ">" +
-      (editMode ? escapeHtml(day.detail) : formatText(day.detail)) +
-      "</p>";
-    return html;
-  }
-
   // editsKey is a box's id for a box panel, or "stage:<id>" for a stage
   // panel -- both are just keys into the same edits store. "step" and
   // "question" only ever occur in a box panel; every other field (box
@@ -795,7 +713,6 @@
         rebuildIndexes();
         buildPanelOrder();
         renderGrid();
-        renderCadence();
         updateOpenQuestionsCount();
       });
     });
@@ -821,7 +738,6 @@
     rebuildIndexes();
     buildPanelOrder();
     renderGrid();
-    renderCadence();
     updateOpenQuestionsCount();
   }
 
@@ -902,7 +818,6 @@
     rebuildIndexes();
     buildPanelOrder();
     renderGrid();
-    renderCadence();
     updateOpenQuestionsCount();
   }
 
@@ -1002,34 +917,6 @@
     }
   }
 
-  // ---------------------------------------------------------------------
-  // A day's kind (auto/human/quiet) drives its cadence-strip color, so it's
-  // edited via a select rather than free text -- same edit-mode gating as
-  // its label/detail (handled by attachEditableListeners via "day:<n>").
-  // ---------------------------------------------------------------------
-  function setDayKind(dayNumber, kind) {
-    if (DAY_KINDS.indexOf(kind) === -1) return;
-    var editsKey = "day:" + dayNumber;
-    var ov = edits[editsKey] || (edits[editsKey] = {});
-    ov.kind = kind;
-    saveEdits(editsKey);
-    content = applyEdits(baseContent, edits);
-    rebuildIndexes();
-    buildPanelOrder();
-    renderGrid();
-    renderCadence();
-    updateOpenQuestionsCount();
-  }
-
-  function attachDayKindListener(day) {
-    var select = document.querySelector(".day-kind-select");
-    if (select) {
-      select.addEventListener("change", function () {
-        setDayKind(day.day, select.value);
-      });
-    }
-  }
-
   function attachQuestionFormListeners(box) {
     var panelContentEl = document.getElementById("panel-content");
     var form = panelContentEl.querySelector("#add-question-form");
@@ -1074,10 +961,6 @@
     if (entry) {
       if (entry.kind === "box") label = boxById[entry.id] ? boxById[entry.id].head : null;
       else if (entry.kind === "stage") label = stageById[entry.stageId] ? stageById[entry.stageId].what : null;
-      else if (entry.kind === "day") {
-        var d = content.days.filter(function (x) { return "day-" + x.day === entry.id; })[0];
-        label = d ? d.label : null;
-      }
     }
     window.dispatchEvent(new CustomEvent("bsb:panel-change", {
       detail: { id: entry ? entry.id : null, kind: entry ? entry.kind : null, label: label }
@@ -1095,9 +978,6 @@
       body = renderBoxPanel(boxById[id]);
     } else if (entry.kind === "stage") {
       body = renderStagePanel(stageById[entry.stageId]);
-    } else if (entry.kind === "day") {
-      var day = content.days.filter(function (d) { return d.day === entry.day; })[0];
-      body = day ? renderDayPanel(day) : "";
     }
 
     document.getElementById("panel-content").innerHTML = body;
@@ -1109,9 +989,6 @@
       attachStepListeners(boxById[id]);
     } else if (entry.kind === "stage") {
       attachEditableListeners("stage:" + stageById[entry.stageId].id);
-    } else if (entry.kind === "day" && day) {
-      attachEditableListeners("day:" + day.day);
-      attachDayKindListener(day);
     }
 
     var panel = document.getElementById("panel");
@@ -1338,7 +1215,6 @@
     rebuildIndexes();
     buildPanelOrder();
     renderGrid();
-    renderCadence();
     updateOpenQuestionsCount();
     if (currentPanelId && panelIndexById[currentPanelId] !== undefined) {
       openPanelById(currentPanelId, { skipFocus: true, skipHash: true });
@@ -1369,8 +1245,7 @@
 
     out.push("  meta: {");
     out.push("    title: " + jsString(data.meta.title) + ",");
-    out.push("    facts: " + jsString(data.meta.facts) + ",");
-    out.push("    cadenceHeading: " + jsString(data.meta.cadenceHeading));
+    out.push("    facts: " + jsString(data.meta.facts));
     out.push("  },");
     out.push("");
 
@@ -1418,13 +1293,6 @@
       });
       out.push("      ]");
       out.push("    }" + (i < data.boxes.length - 1 ? "," : ""));
-    });
-    out.push("  ],");
-    out.push("");
-
-    out.push("  days: [");
-    data.days.forEach(function (d, i) {
-      out.push("    { day: " + d.day + ", kind: " + jsString(d.kind) + ", label: " + jsString(d.label) + ", detail: " + jsString(d.detail) + " }" + (i < data.days.length - 1 ? "," : ""));
     });
     out.push("  ]" + (data.journeys.length ? "," : ""));
 
@@ -1531,7 +1399,6 @@
       rebuildIndexes();
       buildPanelOrder();
       renderGrid();
-      renderCadence();
       updateOpenQuestionsCount();
       if (currentOpenEditsKey() === key) {
         openPanelById(currentPanelId, { skipFocus: true, skipHash: true });
@@ -1545,7 +1412,6 @@
     if (!entry) return null;
     if (entry.kind === "box") return entry.id;
     if (entry.kind === "stage") return "stage:" + entry.stageId;
-    if (entry.kind === "day") return "day:" + entry.day;
     return null;
   }
 
@@ -1585,7 +1451,6 @@
     document.getElementById("meta-facts").textContent = content.meta.facts;
 
     renderGrid();
-    renderCadence();
     updateOpenQuestionsCount();
     updateEditToggleUi();
     wireEvents();

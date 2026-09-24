@@ -270,7 +270,9 @@ button {
   margin: 4px 0 0;
   color: var(--color-text-secondary);
   font-size: 13px;
-  max-width: 80ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .journey-scroll {
   overflow-x: auto;

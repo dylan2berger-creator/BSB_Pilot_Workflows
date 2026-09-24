@@ -87,7 +87,8 @@
       lanes: [],
       stages: [],
       boxes: [],
-      days: []
+      days: [],
+      journeys: []
     };
 
     if (!raw || typeof raw !== "object") {
@@ -229,6 +230,39 @@
       });
     } else {
       errors.push("content.js: days is missing or not an array.");
+    }
+
+    // journeys (optional -- static customer-journey timelines shown above
+    // each stage-group section; not user-editable)
+    if (Array.isArray(raw.journeys)) {
+      raw.journeys.forEach(function (j, ji) {
+        if (!j || typeof j.id !== "string" || !j.id) {
+          errors.push("content.js: journeys[" + ji + "].id is missing — journey skipped.");
+          return;
+        }
+        var steps = [];
+        if (Array.isArray(j.steps)) {
+          j.steps.forEach(function (s, si) {
+            if (!s || typeof s.lane !== "string" || typeof s.when !== "string") {
+              errors.push("content.js: journeys[" + ji + "].steps[" + si + "] needs lane and when — step skipped.");
+              return;
+            }
+            steps.push({
+              lane: s.lane,
+              when: s.when,
+              who: typeof s.who === "string" ? s.who : "",
+              title: typeof s.title === "string" ? s.title : "",
+              how: typeof s.how === "string" ? s.how : ""
+            });
+          });
+        }
+        result.journeys.push({
+          id: j.id,
+          title: typeof j.title === "string" ? j.title : j.id,
+          summary: typeof j.summary === "string" ? j.summary : "",
+          steps: steps
+        });
+      });
     }
 
     return { data: result, errors: errors };
@@ -416,53 +450,66 @@
     return "var(--color-lane-" + laneId + ", var(--color-accent))";
   }
 
-  // Groups the stage columns under two phase labels: the first 4 stages
-  // are "New Assignment," everything after that is "Estimate Follow-up."
-  // Also where the bold divider between those two phases lives.
+  // ---------------------------------------------------------------------
+  // Customer journey timelines -- one static horizontal strip shown above
+  // each stage-group's grid. Not user-editable; just a different view of
+  // the same lane identities (and colors) the grid itself uses.
+  // ---------------------------------------------------------------------
+  function renderJourneyMap(containerId, journeyId) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var journey = content.journeys.filter(function (j) { return j.id === journeyId; })[0];
+    if (!journey) { container.innerHTML = ""; return; }
+
+    var html = '<div class="journey-head">' +
+      '<h2 class="journey-title">' + formatText(journey.title) + "</h2>" +
+      (journey.summary ? '<p class="journey-summary">' + formatText(journey.summary) + "</p>" : "") +
+      "</div>";
+
+    html += '<div class="journey-scroll"><div class="journey-flow">';
+    journey.steps.forEach(function (step) {
+      if (step.lane === "quiet") {
+        html += '<div class="journey-step journey-step-quiet">' +
+          '<div class="journey-when">' + formatText(step.when) + "</div>" +
+          '<div class="journey-dot"></div>' +
+          '<div class="journey-who">Quiet</div>' +
+          "</div>";
+        return;
+      }
+      var lane = laneById[step.lane];
+      var who = step.who || (lane ? lane.name : step.lane);
+      html += '<div class="journey-step" style="--journey-color: ' + laneColorVar(step.lane) + '">' +
+        '<div class="journey-when">' + formatText(step.when) + "</div>" +
+        '<div class="journey-dot"></div>' +
+        '<div class="journey-who">' + formatText(who) + "</div>" +
+        (step.title ? '<div class="journey-step-title">' + formatText(step.title) + "</div>" : "") +
+        (step.how ? '<div class="journey-how">' + formatText(step.how) + "</div>" : "") +
+        "</div>";
+    });
+    html += "</div></div>";
+
+    container.innerHTML = html;
+  }
+
+  // The grid is split into two sections -- "New Assignment" (the first 4
+  // stages) and "Estimate Follow-up" (everything after that) -- each with
+  // its own journey map and its own grid, rendered independently.
   var STAGE_GROUP_SPLIT = 4;
 
-  function renderGrid() {
-    var grid = document.getElementById("grid");
+  function renderGridInto(gridElId, stages) {
+    var grid = document.getElementById(gridElId);
+    if (!grid || !stages.length) return;
     grid.innerHTML = "";
-    grid.style.gridTemplateColumns = "190px repeat(" + content.stages.length + ", minmax(160px, 1fr))";
-
-    var splitIndex = Math.min(STAGE_GROUP_SPLIT, content.stages.length);
-    var firstGroupCount = splitIndex;
-    var secondGroupCount = content.stages.length - splitIndex;
-
-    var groupCorner = document.createElement("div");
-    groupCorner.className = "group-header-corner";
-    grid.appendChild(groupCorner);
-
-    var lastGroupEl = null;
-    if (firstGroupCount > 0) {
-      var group1 = document.createElement("div");
-      group1.className = "group-header";
-      group1.style.gridColumn = "span " + firstGroupCount;
-      group1.textContent = "New Assignment";
-      grid.appendChild(group1);
-      lastGroupEl = group1;
-    }
-    if (secondGroupCount > 0) {
-      var group2 = document.createElement("div");
-      group2.className = "group-header";
-      group2.style.gridColumn = "span " + secondGroupCount;
-      group2.textContent = "Estimate Follow-up";
-      grid.appendChild(group2);
-      lastGroupEl = group2;
-    }
-    if (lastGroupEl) lastGroupEl.classList.add("group-header-last");
+    grid.style.gridTemplateColumns = "190px repeat(" + stages.length + ", minmax(160px, 1fr))";
 
     var corner = document.createElement("div");
     corner.className = "cell corner-cell";
     grid.appendChild(corner);
 
-    content.stages.forEach(function (stage, stageIndex) {
+    stages.forEach(function (stage) {
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "stage-header" +
-        (stage.light ? " stage-header-light" : "") +
-        (stageIndex === splitIndex - 1 ? " stage-divider" : "");
+      btn.className = "stage-header" + (stage.light ? " stage-header-light" : "");
       btn.dataset.panelId = "stage-" + stage.id;
       btn.innerHTML =
         '<div class="stage-when">' + formatText(stage.when) + "</div>" +
@@ -479,11 +526,10 @@
         '<div class="lane-sub">' + formatText(lane.sub) + "</div>";
       grid.appendChild(laneHeader);
 
-      content.stages.forEach(function (stage, stageIndex) {
+      stages.forEach(function (stage, stageIndex) {
         var cell = document.createElement("div");
         cell.className = "cell" +
-          (stageIndex === splitIndex - 1 ? " cell-divider" : "") +
-          (stageIndex === content.stages.length - 1 ? " cell-last-col" : "") +
+          (stageIndex === stages.length - 1 ? " cell-last-col" : "") +
           (laneIndex === content.lanes.length - 1 ? " cell-last-row" : "");
         var boxId = stage.id + "-" + lane.id;
         var box = boxById[boxId];
@@ -498,6 +544,14 @@
         grid.appendChild(cell);
       });
     });
+  }
+
+  function renderGrid() {
+    var splitIndex = Math.min(STAGE_GROUP_SPLIT, content.stages.length);
+    renderGridInto("grid-new-assignment", content.stages.slice(0, splitIndex));
+    renderGridInto("grid-estimate-followup", content.stages.slice(splitIndex));
+    renderJourneyMap("journey-new-assignment", "new-assignment");
+    renderJourneyMap("journey-estimate-followup", "estimate-followup");
   }
 
   function renderCard(box, lane) {
@@ -1372,7 +1426,29 @@
     data.days.forEach(function (d, i) {
       out.push("    { day: " + d.day + ", kind: " + jsString(d.kind) + ", label: " + jsString(d.label) + ", detail: " + jsString(d.detail) + " }" + (i < data.days.length - 1 ? "," : ""));
     });
-    out.push("  ]");
+    out.push("  ]" + (data.journeys.length ? "," : ""));
+
+    if (data.journeys.length) {
+      out.push("");
+      out.push("  journeys: [");
+      data.journeys.forEach(function (j, ji) {
+        out.push("    {");
+        out.push("      id: " + jsString(j.id) + ",");
+        out.push("      title: " + jsString(j.title) + ",");
+        out.push("      summary: " + jsString(j.summary) + ",");
+        out.push("      steps: [");
+        j.steps.forEach(function (s, si) {
+          out.push("        { lane: " + jsString(s.lane) + ", when: " + jsString(s.when) +
+            (s.who ? ", who: " + jsString(s.who) : "") +
+            (s.title ? ", title: " + jsString(s.title) : "") +
+            (s.how ? ", how: " + jsString(s.how) : "") +
+            " }" + (si < j.steps.length - 1 ? "," : ""));
+        });
+        out.push("      ]");
+        out.push("    }" + (ji < data.journeys.length - 1 ? "," : ""));
+      });
+      out.push("  ]");
+    }
 
     out.push("};");
     return out.join("\n") + "\n";

@@ -404,5 +404,38 @@ window.BSB_CONTENT = {
     { day: 10, kind: "quiet", label: "Quiet", detail: "No outreach scheduled." },
     { day: 11, kind: "auto", label: "Pullback Offer", detail: "The pullback offer goes out via text + email." },
     { day: 12, kind: "human", label: "CSR Phone Call", detail: "CSR reaches out by phone — the second human touchpoint in the twelve days." }
+  ],
+
+  journeys: [
+    {
+      id: "new-assignment",
+      title: "New Assignment",
+      summary: "Three automated messages, then the Contact Center picks it up at hour 24. If the customer books then the automated Text + email stops.",
+      steps: [
+        { lane: "bsb", when: "T + 90 sec", who: "BSB", title: "Video + scheduling link", how: "Text + email" },
+        { lane: "bsb", when: "+6 hrs", who: "BSB", title: "Second nudge", how: "Text + email" },
+        { lane: "bsb", when: "+16 hrs", who: "BSB", title: "Third nudge", how: "Text + email" },
+        { lane: "contact-center", when: "Hour 24+", who: "Contact Center", title: "First call from a person", how: "Phone" }
+      ]
+    },
+    {
+      id: "estimate-followup",
+      title: "Estimate Follow Up",
+      summary: "Twelve-days of follow-up starts when the Opportunity is added to BSB",
+      steps: [
+        { lane: "bsb", when: "Day 1", who: "BSB", title: "View + authorize estimate", how: "Text + email" },
+        { lane: "bsb", when: "Day 2", who: "BSB", title: "Follow-up", how: "Text + email" },
+        { lane: "shop", when: "Day 3", who: "Shop CSR", title: "Phone call", how: "BSB prompts CSR" },
+        { lane: "quiet", when: "Day 4" },
+        { lane: "bsb", when: "Day 5", who: "BSB", title: "Follow-up", how: "Text + email" },
+        { lane: "quiet", when: "Day 6" },
+        { lane: "bsb", when: "Day 7", who: "BSB", title: "Follow-up", how: "Text + email" },
+        { lane: "quiet", when: "Day 8" },
+        { lane: "bsb", when: "Day 9", who: "BSB", title: "Follow-up", how: "Text + email" },
+        { lane: "quiet", when: "Day 10" },
+        { lane: "bsb", when: "Day 11", who: "BSB", title: "Follow-up", how: "Text + email" },
+        { lane: "shop", when: "Day 12", who: "Shop CSR", title: "Last phone call", how: "BSB prompts CSR" }
+      ]
+    }
   ]
 };

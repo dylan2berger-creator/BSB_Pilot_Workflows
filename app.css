@@ -243,25 +243,46 @@ button {
   display: flex;
   flex-direction: column;
 }
-.grid > .cell:nth-last-child(-n+7) { border-bottom: none; }
-.grid > .cell:nth-child(7n) { border-right: none; }
+.cell-last-row { border-bottom: none; }
+.cell-last-col { border-right: none; }
 
-/* Emphasize the boundary between the "Call Center takes it" and
-   "Repair Follow-up" stage columns (5th and 6th grid columns). The
-   header segment needs a light-colored line since --color-accent is
-   the same blue as the header's own background and would be invisible
-   there; the card-row segment uses the accent color against the
-   white/light cell background. */
-.grid > .stage-header:nth-child(5) {
+/* Emphasize the boundary between the "New Assignment" and "Estimate
+   Follow-up" stage-column groups. The header segment needs a
+   light-colored line since --color-accent is the same blue as the
+   header's own background and would be invisible there; the card-row
+   segment uses the accent color against the white/light cell
+   background. Assigned by stage identity in renderGrid(), not grid
+   position, so it can't drift out of sync with the group headers
+   above (or break if a row is added/removed above the grid). */
+.stage-header.stage-divider {
   border-right: 3px solid var(--color-stage-text);
 }
-.grid > .cell:nth-child(7n+5) {
+.cell.cell-divider {
   border-right: 3px solid var(--color-accent);
 }
 
 .corner-cell {
   background: var(--color-surface);
 }
+
+.group-header-corner {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.group-header {
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-hairline);
+  border-right: 1px solid var(--color-hairline);
+}
+.group-header.group-header-last { border-right: none; }
 
 .stage-header {
   background: var(--color-stage);

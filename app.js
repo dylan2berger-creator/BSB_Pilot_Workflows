@@ -416,19 +416,53 @@
     return "var(--color-lane-" + laneId + ", var(--color-accent))";
   }
 
+  // Groups the stage columns under two phase labels: the first 4 stages
+  // are "New Assignment," everything after that is "Estimate Follow-up."
+  // Also where the bold divider between those two phases lives.
+  var STAGE_GROUP_SPLIT = 4;
+
   function renderGrid() {
     var grid = document.getElementById("grid");
     grid.innerHTML = "";
     grid.style.gridTemplateColumns = "190px repeat(" + content.stages.length + ", minmax(160px, 1fr))";
 
+    var splitIndex = Math.min(STAGE_GROUP_SPLIT, content.stages.length);
+    var firstGroupCount = splitIndex;
+    var secondGroupCount = content.stages.length - splitIndex;
+
+    var groupCorner = document.createElement("div");
+    groupCorner.className = "group-header-corner";
+    grid.appendChild(groupCorner);
+
+    var lastGroupEl = null;
+    if (firstGroupCount > 0) {
+      var group1 = document.createElement("div");
+      group1.className = "group-header";
+      group1.style.gridColumn = "span " + firstGroupCount;
+      group1.textContent = "New Assignment";
+      grid.appendChild(group1);
+      lastGroupEl = group1;
+    }
+    if (secondGroupCount > 0) {
+      var group2 = document.createElement("div");
+      group2.className = "group-header";
+      group2.style.gridColumn = "span " + secondGroupCount;
+      group2.textContent = "Estimate Follow-up";
+      grid.appendChild(group2);
+      lastGroupEl = group2;
+    }
+    if (lastGroupEl) lastGroupEl.classList.add("group-header-last");
+
     var corner = document.createElement("div");
     corner.className = "cell corner-cell";
     grid.appendChild(corner);
 
-    content.stages.forEach(function (stage) {
+    content.stages.forEach(function (stage, stageIndex) {
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "stage-header" + (stage.light ? " stage-header-light" : "");
+      btn.className = "stage-header" +
+        (stage.light ? " stage-header-light" : "") +
+        (stageIndex === splitIndex - 1 ? " stage-divider" : "");
       btn.dataset.panelId = "stage-" + stage.id;
       btn.innerHTML =
         '<div class="stage-when">' + formatText(stage.when) + "</div>" +
@@ -437,7 +471,7 @@
       grid.appendChild(btn);
     });
 
-    content.lanes.forEach(function (lane) {
+    content.lanes.forEach(function (lane, laneIndex) {
       var laneHeader = document.createElement("div");
       laneHeader.className = "lane-header lane-" + lane.id;
       laneHeader.innerHTML =
@@ -445,9 +479,12 @@
         '<div class="lane-sub">' + formatText(lane.sub) + "</div>";
       grid.appendChild(laneHeader);
 
-      content.stages.forEach(function (stage) {
+      content.stages.forEach(function (stage, stageIndex) {
         var cell = document.createElement("div");
-        cell.className = "cell";
+        cell.className = "cell" +
+          (stageIndex === splitIndex - 1 ? " cell-divider" : "") +
+          (stageIndex === content.stages.length - 1 ? " cell-last-col" : "") +
+          (laneIndex === content.lanes.length - 1 ? " cell-last-row" : "");
         var boxId = stage.id + "-" + lane.id;
         var box = boxById[boxId];
         if (box) {

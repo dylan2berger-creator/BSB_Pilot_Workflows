@@ -404,7 +404,7 @@ window.BSB_CONTENT = {
     {
       id: "estimate-followup",
       title: "Estimate Follow Up",
-      summary: "Twelve-days of follow-up starts when the Opportunity is added to BSB",
+      summary: "Twelve-days of follow-up starts when the Opportunity is added to BSB. If the repair is scheduled then the automated Text + email stops.",
       steps: [
         { lane: "bsb", when: "Day 1", who: "BSB", title: "View + authorize estimate", how: "Text + email" },
         { lane: "bsb", when: "Day 2", who: "BSB", title: "Follow-up", how: "Text + email" },

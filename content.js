@@ -1,6 +1,6 @@
 window.BSB_CONTENT = {
   meta: {
-    title: "BodyShop Booster Customer Journey's and Workflows"
+    title: "BodyShop Booster Customer Journeys and Workflows"
   },
 
   lanes: [

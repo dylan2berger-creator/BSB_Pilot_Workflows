@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css?v=20260924g">
-<link rel="stylesheet" href="notes.css?v=20260923">
 </head>
 <body>
 
@@ -20,9 +19,6 @@
       <h1 id="meta-title"></h1>
     </div>
     <div class="topbar-actions">
-      <button id="notes-toggle" class="btn btn-ghost" type="button">
-        Session Notes<span id="notes-count" class="notes-count-badge" hidden></span>
-      </button>
       <button id="edit-toggle" class="btn btn-ghost" type="button" aria-pressed="false">Edit mode: Off</button>
       <button id="open-questions-btn" class="btn btn-primary" type="button">
         <span id="oq-count">0</span> Open Questions
@@ -77,36 +73,11 @@
   </div>
 </div>
 
-<aside id="notes-drawer" class="panel notes-drawer" hidden aria-hidden="true" aria-labelledby="notes-title">
-  <div class="panel-inner">
-    <div class="panel-topbar">
-      <div>
-        <h2 id="notes-title" class="notes-title">Session Notes</h2>
-        <p id="notes-mode-note" class="notes-mode-note"></p>
-      </div>
-      <button id="notes-close" class="btn btn-icon" type="button" aria-label="Close session notes">&times;</button>
-    </div>
-    <div id="notes-list" class="notes-list" aria-live="polite"></div>
-    <form id="notes-compose" class="notes-compose">
-      <label id="notes-context-label" class="notes-context-chip" for="notes-attach-context" hidden>
-        <input id="notes-attach-context" type="checkbox" checked>
-        <span id="notes-context-text"></span>
-      </label>
-      <textarea id="notes-input" class="notes-textarea" placeholder="Add a note for the room&hellip;" rows="2" required></textarea>
-      <div class="notes-compose-row">
-        <span id="notes-error" class="notes-error" role="alert"></span>
-        <button type="submit" class="btn btn-primary">Add note</button>
-      </div>
-    </form>
-  </div>
-</aside>
-
 <div id="copy-toast" class="toast" hidden>Copied to clipboard</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="content.js?v=20260924e"></script>
-<script src="app.js?v=20260924f"></script>
-<script src="notes.js?v=20260923"></script>
+<script src="app.js?v=20260925a"></script>
 <script src="sync.js?v=20260923"></script>
 </body>
 </html>

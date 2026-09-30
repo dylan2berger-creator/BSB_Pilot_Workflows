@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=20260930b">
+<link rel="stylesheet" href="app.css?v=20260930c">
 </head>
 <body>
 
@@ -25,13 +25,9 @@
       </button>
     </div>
   </div>
-  <nav class="view-tabs" aria-label="Page view">
-    <button id="tab-grid" class="view-tab is-active" type="button" aria-pressed="true">Process Grid</button>
-    <button id="tab-timeline" class="view-tab" type="button" aria-pressed="false">Leadership Timeline</button>
-  </nav>
 </header>
 
-<main class="main" id="view-grid">
+<main class="main">
   <section class="stage-group" aria-label="New Assignment">
     <div id="journey-new-assignment" class="journey"></div>
     <div class="grid-scroll">
@@ -47,8 +43,6 @@
   </section>
 
 </main>
-
-<main class="main" id="view-timeline" hidden></main>
 
 <div id="panel-backdrop" class="panel-backdrop" hidden></div>
 <aside id="panel" class="panel" hidden aria-hidden="true">
@@ -82,8 +76,8 @@
 <div id="copy-toast" class="toast" hidden>Copied to clipboard</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="content.js?v=20260924e"></script>
-<script src="app.js?v=20260930c"></script>
+<script src="content.js?v=20260930a"></script>
+<script src="app.js?v=20260930d"></script>
 <script src="sync.js?v=20260923"></script>
 </body>
 </html>

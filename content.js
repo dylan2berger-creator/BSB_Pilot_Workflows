@@ -395,10 +395,10 @@ window.BSB_CONTENT = {
       title: "New Assignment",
       summary: "Three automated messages, then the Contact Center picks it up at hour 24. If the customer books then the automated Text + email stops.",
       steps: [
-        { lane: "bsb", when: "T + 90 sec", who: "BSB", title: "Video + scheduling link", how: "Text + email" },
-        { lane: "bsb", when: "+6 hrs", who: "BSB", title: "Second nudge", how: "Text + email" },
-        { lane: "bsb", when: "+16 hrs", who: "BSB", title: "Third nudge", how: "Text + email" },
-        { lane: "contact-center", when: "Hour 24+", who: "Contact Center", title: "First call from a person", how: "Phone" }
+        { lane: "bsb", when: "T + 90 sec", who: "BSB", title: "Video + scheduling link", how: "Text + email", stage: "s2" },
+        { lane: "bsb", when: "+6 hrs", who: "BSB", title: "Second nudge", how: "Text + email", stage: "s3" },
+        { lane: "bsb", when: "+16 hrs", who: "BSB", title: "Third nudge", how: "Text + email", stage: "s3" },
+        { lane: "contact-center", when: "Hour 24+", who: "Contact Center", title: "First call from a person", how: "Phone", stage: "s4" }
       ]
     },
     {
@@ -406,18 +406,18 @@ window.BSB_CONTENT = {
       title: "Estimate Follow Up",
       summary: "Twelve-days of follow-up starts when the Opportunity is added to BSB. If the repair is scheduled then the automated Text + email stops.",
       steps: [
-        { lane: "bsb", when: "Day 1", who: "BSB", title: "View + authorize estimate", how: "Text + email" },
-        { lane: "bsb", when: "Day 2", who: "BSB", title: "Follow-up", how: "Text + email" },
-        { lane: "shop", when: "Day 3", who: "Shop CSR", title: "Phone call", how: "BSB prompts CSR" },
-        { lane: "quiet", when: "Day 4" },
-        { lane: "bsb", when: "Day 5", who: "BSB", title: "Follow-up", how: "Text + email" },
-        { lane: "quiet", when: "Day 6" },
-        { lane: "bsb", when: "Day 7", who: "BSB", title: "Follow-up", how: "Text + email" },
-        { lane: "quiet", when: "Day 8" },
-        { lane: "bsb", when: "Day 9", who: "BSB", title: "Follow-up", how: "Text + email" },
-        { lane: "quiet", when: "Day 10" },
-        { lane: "bsb", when: "Day 11", who: "BSB", title: "Follow-up", how: "Text + email" },
-        { lane: "shop", when: "Day 12", who: "Shop CSR", title: "Last phone call", how: "BSB prompts CSR" }
+        { lane: "bsb", when: "Day 1", who: "BSB", title: "View + authorize estimate", how: "Text + email", stage: "s5" },
+        { lane: "bsb", when: "Day 2", who: "BSB", title: "Follow-up", how: "Text + email", stage: "s5" },
+        { lane: "shop", when: "Day 3", who: "Shop CSR", title: "Phone call", how: "BSB prompts CSR", stage: "s6" },
+        { lane: "quiet", when: "Day 4", stage: "s5" },
+        { lane: "bsb", when: "Day 5", who: "BSB", title: "Follow-up", how: "Text + email", stage: "s5" },
+        { lane: "quiet", when: "Day 6", stage: "s5" },
+        { lane: "bsb", when: "Day 7", who: "BSB", title: "Follow-up", how: "Text + email", stage: "s5" },
+        { lane: "quiet", when: "Day 8", stage: "s5" },
+        { lane: "bsb", when: "Day 9", who: "BSB", title: "Follow-up", how: "Text + email", stage: "s5" },
+        { lane: "quiet", when: "Day 10", stage: "s5" },
+        { lane: "bsb", when: "Day 11", who: "BSB", title: "Follow-up", how: "Text + email", stage: "s5" },
+        { lane: "shop", when: "Day 12", who: "Shop CSR", title: "Last phone call", how: "BSB prompts CSR", stage: "s6" }
       ]
     }
   ]

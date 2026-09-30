@@ -230,7 +230,8 @@
               when: s.when,
               who: typeof s.who === "string" ? s.who : "",
               title: typeof s.title === "string" ? s.title : "",
-              how: typeof s.how === "string" ? s.how : ""
+              how: typeof s.how === "string" ? s.how : "",
+              stage: typeof s.stage === "string" ? s.stage : ""
             });
           });
         }
@@ -417,7 +418,11 @@
   // ---------------------------------------------------------------------
   // Customer journey timelines -- one static horizontal strip shown above
   // each stage-group's grid. Not user-editable; just a different view of
-  // the same lane identities (and colors) the grid itself uses.
+  // the same lane identities (and colors) the grid itself uses. Each step
+  // is tagged with the stage it falls within (content.js's journeys[].
+  // steps[].stage), so hovering or focusing a step can show what BSB,
+  // Shop, and Contact Center are each doing (or not doing) at that point
+  // -- reusing the exact same box data the grid itself renders from.
   // ---------------------------------------------------------------------
   function renderJourneyMap(containerId, journeyId) {
     var container = document.getElementById(containerId);
@@ -432,8 +437,9 @@
 
     html += '<div class="journey-scroll"><div class="journey-flow">';
     journey.steps.forEach(function (step) {
+      var stageAttr = step.stage ? ' data-stage-id="' + escapeHtml(step.stage) + '" tabindex="0"' : "";
       if (step.lane === "quiet") {
-        html += '<div class="journey-step journey-step-quiet">' +
+        html += '<div class="journey-step journey-step-quiet"' + stageAttr + '>' +
           '<div class="journey-when">' + formatText(step.when) + "</div>" +
           '<div class="journey-dot"></div>' +
           '<div class="journey-who">Quiet</div>' +
@@ -442,7 +448,7 @@
       }
       var lane = laneById[step.lane];
       var who = step.who || (lane ? lane.name : step.lane);
-      html += '<div class="journey-step" style="--journey-color: ' + laneColorVar(step.lane) + '">' +
+      html += '<div class="journey-step" style="--journey-color: ' + laneColorVar(step.lane) + '"' + stageAttr + '>' +
         '<div class="journey-when">' + formatText(step.when) + "</div>" +
         '<div class="journey-dot"></div>' +
         '<div class="journey-who">' + formatText(who) + "</div>" +
@@ -453,6 +459,15 @@
     html += "</div></div>";
 
     container.innerHTML = html;
+
+    container.querySelectorAll(".journey-step[data-stage-id]").forEach(function (el) {
+      var stage = stageById[el.dataset.stageId];
+      if (!stage) return;
+      el.addEventListener("mouseenter", function () { showStepTooltip(el, stage); });
+      el.addEventListener("mouseleave", scheduleHideStepTooltip);
+      el.addEventListener("focus", function () { showStepTooltip(el, stage); });
+      el.addEventListener("blur", scheduleHideStepTooltip);
+    });
   }
 
   // The grid is split into two sections -- "New Assignment" (the first 4
@@ -516,24 +531,21 @@
     renderGridInto("grid-estimate-followup", content.stages.slice(splitIndex));
     renderJourneyMap("journey-new-assignment", "new-assignment");
     renderJourneyMap("journey-estimate-followup", "estimate-followup");
-    renderLeadershipTimeline();
   }
 
   // ---------------------------------------------------------------------
-  // Leadership timeline -- a single horizontal track along the customer
-  // journey (one node per stage, not one row per participant), split into
-  // the same "New Assignment" / "12-Day Follow-up" groups as the grid.
-  // Each node carries a small status strip (one dot per participant --
-  // solid if they're actively doing something at that stage, hollow if
-  // it's a quiet/no-action stage for them) for an at-a-glance read, plus
-  // a hover preview and a click-through to the full stage panel (which
-  // lists what every participant is doing there) for the full detail.
-  // Renders entirely from the existing lanes/stages/boxes data -- no new
-  // content.js fields -- so it can never drift out of sync with the grid.
+  // Per-stage participant breakdowns, reused in two places: the stage
+  // detail panel (all 4 lanes, via renderLaneBreakdownList) and the
+  // journey-step hover tooltip (BSB/Shop/Contact Center only, via
+  // renderParticipantBreakdownList -- the customer's own lane is already
+  // what the journey step itself represents). Both render from the same
+  // lanes/stages/boxes data the grid uses, so they can never drift out of
+  // sync with it.
   // ---------------------------------------------------------------------
-  function renderLaneBreakdownList(stage) {
+  function renderLaneBreakdownList(stage, laneIds) {
+    var lanes = laneIds ? content.lanes.filter(function (l) { return laneIds.indexOf(l.id) !== -1; }) : content.lanes;
     var html = '<div class="lane-breakdown-list">';
-    content.lanes.forEach(function (lane) {
+    lanes.forEach(function (lane) {
       var box = boxById[stage.id + "-" + lane.id];
       if (!box) return;
       html += '<button type="button" class="lane-breakdown-item' + (box.quiet ? " is-quiet" : "") + '" data-box-id="' + box.id + '">' +
@@ -545,49 +557,40 @@
     return html;
   }
 
-  function renderTimelineStatusStrip(stage) {
-    var html = '<span class="timeline-status-strip">';
-    content.lanes.forEach(function (lane) {
-      var box = boxById[stage.id + "-" + lane.id];
-      var active = box && !box.quiet;
-      html += '<span class="timeline-status-dot' + (active ? " is-active" : "") + '" style="--tl-color: ' + laneColorVar(lane.id) + '" title="' + escapeHtml(lane.name) + (active ? "" : " -- no action") + '"></span>';
+  var STEP_TOOLTIP_LANES = ["bsb", "shop", "contact-center"];
+
+  // A single shared tooltip, position:fixed and appended to <body> rather
+  // than nested inside .journey-scroll: that element needs overflow-x:auto
+  // so narrow screens can scroll the timeline, and per the CSS overflow
+  // spec a box can't have one axis auto and the other genuinely visible --
+  // the "visible" axis gets silently forced to auto too, which would clip
+  // the tooltip. Same quirk as the sticky-topbar fix elsewhere in this
+  // app; the fix here is the same idea: don't nest the thing that needs to
+  // escape inside the thing that clips.
+  var stepTooltipEl = null;
+  var stepTooltipHideTimer = null;
+
+  function ensureStepTooltip() {
+    if (stepTooltipEl) return stepTooltipEl;
+    stepTooltipEl = document.createElement("div");
+    stepTooltipEl.className = "step-tooltip-fixed";
+    stepTooltipEl.addEventListener("mouseenter", function () {
+      if (stepTooltipHideTimer) { clearTimeout(stepTooltipHideTimer); stepTooltipHideTimer = null; }
     });
-    html += "</span>";
-    return html;
+    stepTooltipEl.addEventListener("mouseleave", scheduleHideStepTooltip);
+    document.body.appendChild(stepTooltipEl);
+    return stepTooltipEl;
   }
 
-  // The shared tooltip is deliberately position:fixed and appended to
-  // <body> rather than nested inside .timeline-flow-scroll: that element
-  // needs overflow-x:auto so narrow screens can scroll the timeline, and
-  // per the CSS overflow spec a box can't have one axis auto and the
-  // other genuinely visible -- the "visible" axis gets silently forced to
-  // auto too, which would clip the tooltip. Same quirk as the sticky
-  // topbar fix elsewhere in this app; the fix here is the same idea:
-  // don't nest the thing that needs to escape inside the thing that clips.
-  var timelineTooltipEl = null;
-  var timelineTooltipHideTimer = null;
-
-  function ensureTimelineTooltip() {
-    if (timelineTooltipEl) return timelineTooltipEl;
-    timelineTooltipEl = document.createElement("div");
-    timelineTooltipEl.className = "timeline-tooltip-fixed";
-    timelineTooltipEl.addEventListener("mouseenter", function () {
-      if (timelineTooltipHideTimer) { clearTimeout(timelineTooltipHideTimer); timelineTooltipHideTimer = null; }
-    });
-    timelineTooltipEl.addEventListener("mouseleave", scheduleHideTimelineTooltip);
-    document.body.appendChild(timelineTooltipEl);
-    return timelineTooltipEl;
-  }
-
-  function showTimelineTooltip(anchorEl, stage) {
-    if (timelineTooltipHideTimer) { clearTimeout(timelineTooltipHideTimer); timelineTooltipHideTimer = null; }
-    var tooltip = ensureTimelineTooltip();
-    tooltip.innerHTML = '<div class="timeline-tooltip-title">' + formatText(stage.what) + "</div>" +
-      renderLaneBreakdownList(stage);
+  function showStepTooltip(anchorEl, stage) {
+    if (stepTooltipHideTimer) { clearTimeout(stepTooltipHideTimer); stepTooltipHideTimer = null; }
+    var tooltip = ensureStepTooltip();
+    tooltip.innerHTML = '<div class="step-tooltip-title">' + formatText(stage.what) + "</div>" +
+      renderLaneBreakdownList(stage, STEP_TOOLTIP_LANES);
     tooltip.querySelectorAll("[data-box-id]").forEach(function (el) {
       el.addEventListener("click", function (e) {
         e.stopPropagation();
-        hideTimelineTooltip();
+        hideStepTooltip();
         openPanelById(el.dataset.boxId);
       });
     });
@@ -599,7 +602,7 @@
     left = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8));
 
     // Fixed positioning doesn't scroll with the page, so a tooltip placed
-    // below a node near the bottom of a short page can render off-screen
+    // below a step near the bottom of a short page can render off-screen
     // with no way to scroll to it. Flip above when there isn't room below
     // but there is above; otherwise clamp to the viewport as a fallback.
     var spaceBelow = window.innerHeight - anchorRect.bottom;
@@ -616,89 +619,13 @@
     tooltip.style.top = top + "px";
   }
 
-  function hideTimelineTooltip() {
-    if (timelineTooltipEl) timelineTooltipEl.classList.remove("is-visible");
+  function hideStepTooltip() {
+    if (stepTooltipEl) stepTooltipEl.classList.remove("is-visible");
   }
 
-  function scheduleHideTimelineTooltip() {
-    if (timelineTooltipHideTimer) clearTimeout(timelineTooltipHideTimer);
-    timelineTooltipHideTimer = setTimeout(hideTimelineTooltip, 120);
-  }
-
-  function renderTimelineGroup(title, summary, stages) {
-    var section = document.createElement("section");
-    section.className = "timeline-group";
-
-    var head = document.createElement("div");
-    head.className = "journey-head";
-    head.innerHTML = '<h2 class="journey-title">' + formatText(title) + "</h2>" +
-      (summary ? '<p class="journey-summary">' + formatText(summary) + "</p>" : "");
-    section.appendChild(head);
-
-    var scroll = document.createElement("div");
-    scroll.className = "timeline-flow-scroll";
-    var flow = document.createElement("div");
-    flow.className = "timeline-flow";
-
-    stages.forEach(function (stage) {
-      var step = document.createElement("div");
-      step.className = "timeline-flow-step";
-
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "timeline-flow-node";
-      btn.dataset.panelId = "stage-" + stage.id;
-      btn.innerHTML =
-        '<span class="timeline-when">' + formatText(stage.when) + "</span>" +
-        '<span class="timeline-dot' + (stage.light ? " timeline-dot-light" : "") + '"></span>' +
-        '<span class="timeline-what">' + formatText(stage.what) + "</span>" +
-        renderTimelineStatusStrip(stage);
-      btn.addEventListener("click", function () { openPanelById(btn.dataset.panelId); });
-      btn.addEventListener("mouseenter", function () { showTimelineTooltip(btn, stage); });
-      btn.addEventListener("mouseleave", scheduleHideTimelineTooltip);
-      btn.addEventListener("focus", function () { showTimelineTooltip(btn, stage); });
-      btn.addEventListener("blur", scheduleHideTimelineTooltip);
-
-      step.appendChild(btn);
-      flow.appendChild(step);
-    });
-
-    scroll.appendChild(flow);
-    section.appendChild(scroll);
-    return section;
-  }
-
-  function renderLeadershipTimeline() {
-    var container = document.getElementById("view-timeline");
-    if (!container) return;
-    var splitIndex = Math.min(STAGE_GROUP_SPLIT, content.stages.length);
-    var newAssignmentJourney = content.journeys.filter(function (j) { return j.id === "new-assignment"; })[0];
-    var followupJourney = content.journeys.filter(function (j) { return j.id === "estimate-followup"; })[0];
-
-    container.innerHTML = "";
-    container.appendChild(renderTimelineGroup(
-      "New Assignment",
-      newAssignmentJourney ? newAssignmentJourney.summary : "",
-      content.stages.slice(0, splitIndex)
-    ));
-    container.appendChild(renderTimelineGroup(
-      "12-Day Follow-up",
-      followupJourney ? followupJourney.summary : "",
-      content.stages.slice(splitIndex)
-    ));
-  }
-
-  function switchView(view) {
-    var isTimeline = view === "timeline";
-    hideTimelineTooltip();
-    document.getElementById("view-grid").hidden = isTimeline;
-    document.getElementById("view-timeline").hidden = !isTimeline;
-    var gridTab = document.getElementById("tab-grid");
-    var timelineTab = document.getElementById("tab-timeline");
-    gridTab.classList.toggle("is-active", !isTimeline);
-    gridTab.setAttribute("aria-pressed", String(!isTimeline));
-    timelineTab.classList.toggle("is-active", isTimeline);
-    timelineTab.setAttribute("aria-pressed", String(isTimeline));
+  function scheduleHideStepTooltip() {
+    if (stepTooltipHideTimer) clearTimeout(stepTooltipHideTimer);
+    stepTooltipHideTimer = setTimeout(hideStepTooltip, 120);
   }
 
   function renderCard(box, lane) {
@@ -1478,6 +1405,7 @@
             (s.who ? ", who: " + jsString(s.who) : "") +
             (s.title ? ", title: " + jsString(s.title) : "") +
             (s.how ? ", how: " + jsString(s.how) : "") +
+            (s.stage ? ", stage: " + jsString(s.stage) : "") +
             " }" + (si < j.steps.length - 1 ? "," : ""));
         });
         out.push("      ]");
@@ -1525,9 +1453,6 @@
     });
 
     document.getElementById("edit-toggle").addEventListener("click", toggleEditMode);
-
-    document.getElementById("tab-grid").addEventListener("click", function () { switchView("grid"); });
-    document.getElementById("tab-timeline").addEventListener("click", function () { switchView("timeline"); });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {

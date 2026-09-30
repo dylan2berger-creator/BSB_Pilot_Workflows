@@ -165,28 +165,6 @@ button {
   flex-wrap: wrap;
 }
 
-.view-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 0 20px 10px;
-}
-.view-tab {
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-family: inherit;
-}
-.view-tab:hover { background: var(--color-surface-alt); color: var(--color-text); }
-.view-tab.is-active {
-  background: var(--color-accent);
-  color: #fff;
-}
-
 .btn {
   border: 1px solid var(--color-hairline);
   background: var(--color-surface);
@@ -427,106 +405,28 @@ button {
 .lane-shop { background: var(--color-lane-shop); color: var(--color-lane-shop-text); }
 .lane-contact-center { background: var(--color-lane-contact-center); color: var(--color-lane-contact-center-text); }
 
-/* ---------- Leadership timeline ---------- */
-/* A single horizontal track along the customer journey (one node per
-   stage) rather than a grid: hover or click a stage to see what every
-   participant is doing (or not doing) there. */
-.timeline-group {
-  margin-top: 28px;
-}
-.timeline-group:first-child {
-  margin-top: 0;
-}
-.timeline-flow-scroll {
-  overflow-x: auto;
-  padding: 20px 8px 16px;
-}
-.timeline-flow {
-  display: flex;
-  align-items: flex-start;
-  width: max-content;
-  position: relative;
-}
-.timeline-flow::before {
-  content: "";
-  position: absolute;
-  left: 85px;
-  right: 85px;
-  top: 33px;
-  height: 2px;
-  background: var(--color-hairline);
-}
-.timeline-flow-step {
-  position: relative;
-  width: 170px;
-  flex: none;
-  padding-inline: 6px;
-}
-.timeline-flow-node {
-  border: none;
-  background: transparent;
+/* ---------- Journey step hover/click detail ---------- */
+/* Each dot in the customer-journey strips above the grid is tagged with
+   the stage it falls within (content.js journeys[].steps[].stage), so
+   hovering or focusing it can show what BSB, Shop, and Contact Center are
+   each doing (or not doing) at that point -- reusing the same box data
+   the grid itself renders from. */
+.journey-step[data-stage-id] {
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  padding: 4px 4px 8px;
-  font-family: inherit;
   border-radius: var(--radius);
 }
-.timeline-flow-node:hover,
-.timeline-flow-node:focus-visible {
+.journey-step[data-stage-id]:hover,
+.journey-step[data-stage-id]:focus-visible {
   background: var(--color-surface-alt);
-}
-.timeline-when {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-.timeline-dot {
-  margin: 4px auto 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  position: relative;
-  z-index: 1;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 4px var(--color-page);
-}
-.timeline-dot-light {
-  filter: brightness(1.5);
-}
-.timeline-what {
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--color-text);
-  text-align: center;
-  line-height: 1.25;
-}
-.timeline-status-strip {
-  display: flex;
-  gap: 5px;
-  margin-top: 6px;
-}
-.timeline-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-legend-quiet);
-}
-.timeline-status-dot.is-active {
-  background: var(--tl-color, var(--color-accent));
 }
 
 /* A single shared tooltip, positioned via JS with a fixed viewport
-   coordinate (see showTimelineTooltip) rather than CSS-anchored to its
-   triggering node -- it has to escape .timeline-flow-scroll's horizontal
+   coordinate (see showStepTooltip) rather than CSS-anchored to its
+   triggering step -- it has to escape .journey-scroll's horizontal
    scroll clipping, and an overflow-x:auto ancestor can never leave a
    descendant's overflow-y truly visible (same platform quirk as the
    html/body sticky-header fix elsewhere in this file). */
-.timeline-tooltip-fixed {
+.step-tooltip-fixed {
   position: fixed;
   width: 260px;
   z-index: 500;
@@ -541,12 +441,12 @@ button {
   pointer-events: none;
   transition: opacity 0.1s ease;
 }
-.timeline-tooltip-fixed.is-visible {
+.step-tooltip-fixed.is-visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
-.timeline-tooltip-title {
+.step-tooltip-title {
   font-weight: 800;
   font-size: 13px;
   margin-bottom: 8px;

@@ -428,154 +428,162 @@ button {
 .lane-contact-center { background: var(--color-lane-contact-center); color: var(--color-lane-contact-center-text); }
 
 /* ---------- Leadership timeline ---------- */
+/* A single horizontal track along the customer journey (one node per
+   stage) rather than a grid: hover or click a stage to see what every
+   participant is doing (or not doing) there. */
 .timeline-group {
   margin-top: 28px;
 }
 .timeline-group:first-child {
   margin-top: 0;
 }
-.timeline-table {
+.timeline-flow-scroll {
   overflow-x: auto;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  padding: 20px 8px 16px;
 }
-.timeline-header-row,
-.timeline-lane-row {
+.timeline-flow {
   display: flex;
-  min-width: max-content;
-}
-.timeline-header-row {
-  border-bottom: 1px solid var(--color-hairline);
-}
-.timeline-lane-row {
+  align-items: flex-start;
+  width: max-content;
   position: relative;
-  border-bottom: 1px solid var(--color-hairline);
 }
-.timeline-lane-row:last-child {
-  border-bottom: none;
-}
-.timeline-lane-row::before {
-  /* Aligned to the dot's own center: .timeline-node-cell's 14px top
-     padding plus half the 16px .timeline-dot -- not the row's vertical
-     midpoint, which sits lower (the label line pulls it down). */
+.timeline-flow::before {
   content: "";
   position: absolute;
-  left: 190px;
-  right: 16px;
-  top: 22px;
+  left: 85px;
+  right: 85px;
+  top: 33px;
   height: 2px;
   background: var(--color-hairline);
 }
-.timeline-corner,
-.timeline-lane-label {
-  flex: none;
-  width: 190px;
-  box-sizing: border-box;
-}
-.timeline-corner {
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-hairline);
-}
-.timeline-lane-label {
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 10px 12px;
-  position: sticky;
-  left: 0;
-  z-index: 5;
-}
-.timeline-lane-label .lane-name {
-  font-weight: 700;
-  font-size: 14px;
-}
-.timeline-lane-label .lane-sub {
-  font-size: 11px;
-  opacity: 0.9;
-  margin-top: 2px;
-  line-height: 1.3;
-}
-.timeline-stage-header {
-  flex: 1 1 140px;
-  min-width: 140px;
-  background: var(--color-stage);
-  color: var(--color-stage-text);
-  cursor: pointer;
-  border: none;
-  border-left: 1px solid var(--color-hairline);
-  text-align: left;
-  font-family: inherit;
-  padding: 10px 12px;
-}
-.timeline-stage-header:hover { filter: brightness(1.08); }
-.timeline-stage-header-light { filter: brightness(1.3); }
-.timeline-stage-header-light:hover { filter: brightness(1.4); }
-.timeline-stage-header .stage-when {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  opacity: 0.85;
-}
-.timeline-stage-header .stage-what {
-  font-size: 13px;
-  font-weight: 700;
-  margin-top: 4px;
-  line-height: 1.25;
-}
-.timeline-node-cell {
-  flex: 1 1 140px;
-  min-width: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 8px;
+.timeline-flow-step {
   position: relative;
-  z-index: 1;
+  width: 170px;
+  flex: none;
+  padding-inline: 6px;
 }
-.timeline-node-empty {
-  color: var(--color-text-secondary);
-}
-.timeline-node {
+.timeline-flow-node {
   border: none;
   background: transparent;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 4px;
-  font-family: inherit;
+  gap: 4px;
   width: 100%;
+  padding: 4px 4px 8px;
+  font-family: inherit;
+  border-radius: var(--radius);
+}
+.timeline-flow-node:hover,
+.timeline-flow-node:focus-visible {
+  background: var(--color-surface-alt);
+}
+.timeline-when {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 .timeline-dot {
+  margin: 4px auto 2px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--tl-color, var(--color-accent));
-  box-shadow: 0 0 0 4px var(--color-surface);
+  position: relative;
+  z-index: 1;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-page);
 }
-.timeline-node-label {
-  font-size: 12px;
+.timeline-dot-light {
+  filter: brightness(1.5);
+}
+.timeline-what {
   font-weight: 700;
+  font-size: 13px;
   color: var(--color-text);
-  max-width: 130px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.25;
 }
-.timeline-node:hover .timeline-node-label {
-  text-decoration: underline;
+.timeline-status-strip {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
 }
-.timeline-node.is-quiet .timeline-dot {
-  width: 9px;
-  height: 9px;
+.timeline-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   background: var(--color-legend-quiet);
 }
-.timeline-node.is-quiet .timeline-node-label {
-  font-weight: 600;
+.timeline-status-dot.is-active {
+  background: var(--tl-color, var(--color-accent));
+}
+
+/* A single shared tooltip, positioned via JS with a fixed viewport
+   coordinate (see showTimelineTooltip) rather than CSS-anchored to its
+   triggering node -- it has to escape .timeline-flow-scroll's horizontal
+   scroll clipping, and an overflow-x:auto ancestor can never leave a
+   descendant's overflow-y truly visible (same platform quirk as the
+   html/body sticky-header fix elsewhere in this file). */
+.timeline-tooltip-fixed {
+  position: fixed;
+  width: 260px;
+  z-index: 500;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+  padding: 12px;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+.timeline-tooltip-fixed.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.timeline-tooltip-title {
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.lane-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lane-breakdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  margin: -4px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: calc(100% + 8px);
+}
+.lane-breakdown-item:hover {
+  background: var(--color-surface-alt);
+}
+.lane-breakdown-item .panel-lane-pill {
+  flex: none;
+  margin-top: 1px;
+}
+.lane-breakdown-text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+.lane-breakdown-item.is-quiet .lane-breakdown-text {
   color: var(--color-text-secondary);
 }
 

@@ -520,31 +520,95 @@
   }
 
   // ---------------------------------------------------------------------
-  // Leadership timeline -- a leaner, presentation-facing read of the same
-  // lanes/stages/boxes data as the grid: one swimlane per participant
-  // (Customer, BSB, Shop, Contact Center) across a shared time axis, split
-  // into the same "New Assignment" / "12-Day Follow-up" groups as the
-  // grid. No new data, no edit affordances -- just a different shape on
-  // the same content, so it can never drift out of sync with the grid.
-  // Clicking a node opens the exact same detail panel the grid uses.
+  // Leadership timeline -- a single horizontal track along the customer
+  // journey (one node per stage, not one row per participant), split into
+  // the same "New Assignment" / "12-Day Follow-up" groups as the grid.
+  // Each node carries a small status strip (one dot per participant --
+  // solid if they're actively doing something at that stage, hollow if
+  // it's a quiet/no-action stage for them) for an at-a-glance read, plus
+  // a hover preview and a click-through to the full stage panel (which
+  // lists what every participant is doing there) for the full detail.
+  // Renders entirely from the existing lanes/stages/boxes data -- no new
+  // content.js fields -- so it can never drift out of sync with the grid.
   // ---------------------------------------------------------------------
-  function renderTimelineNode(box) {
-    var wrap = document.createElement("div");
-    wrap.className = "timeline-node-cell";
-    if (!box) {
-      wrap.innerHTML = '<span class="timeline-node-empty">&mdash;</span>';
-      return wrap;
-    }
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "timeline-node" + (box.quiet ? " is-quiet" : "");
-    btn.style.setProperty("--tl-color", laneColorVar(box.lane));
-    btn.dataset.boxId = box.id;
-    btn.innerHTML =
-      '<span class="timeline-dot"></span>' +
-      '<span class="timeline-node-label">' + formatText(box.head) + "</span>";
-    wrap.appendChild(btn);
-    return wrap;
+  function renderLaneBreakdownList(stage) {
+    var html = '<div class="lane-breakdown-list">';
+    content.lanes.forEach(function (lane) {
+      var box = boxById[stage.id + "-" + lane.id];
+      if (!box) return;
+      html += '<button type="button" class="lane-breakdown-item' + (box.quiet ? " is-quiet" : "") + '" data-box-id="' + box.id + '">' +
+        '<span class="panel-lane-pill lane-' + lane.id + '">' + formatText(lane.name) + "</span>" +
+        '<span class="lane-breakdown-text">' + formatText(box.quiet ? box.head : box.card) + "</span>" +
+        "</button>";
+    });
+    html += "</div>";
+    return html;
+  }
+
+  function renderTimelineStatusStrip(stage) {
+    var html = '<span class="timeline-status-strip">';
+    content.lanes.forEach(function (lane) {
+      var box = boxById[stage.id + "-" + lane.id];
+      var active = box && !box.quiet;
+      html += '<span class="timeline-status-dot' + (active ? " is-active" : "") + '" style="--tl-color: ' + laneColorVar(lane.id) + '" title="' + escapeHtml(lane.name) + (active ? "" : " -- no action") + '"></span>';
+    });
+    html += "</span>";
+    return html;
+  }
+
+  // The shared tooltip is deliberately position:fixed and appended to
+  // <body> rather than nested inside .timeline-flow-scroll: that element
+  // needs overflow-x:auto so narrow screens can scroll the timeline, and
+  // per the CSS overflow spec a box can't have one axis auto and the
+  // other genuinely visible -- the "visible" axis gets silently forced to
+  // auto too, which would clip the tooltip. Same quirk as the sticky
+  // topbar fix elsewhere in this app; the fix here is the same idea:
+  // don't nest the thing that needs to escape inside the thing that clips.
+  var timelineTooltipEl = null;
+  var timelineTooltipHideTimer = null;
+
+  function ensureTimelineTooltip() {
+    if (timelineTooltipEl) return timelineTooltipEl;
+    timelineTooltipEl = document.createElement("div");
+    timelineTooltipEl.className = "timeline-tooltip-fixed";
+    timelineTooltipEl.addEventListener("mouseenter", function () {
+      if (timelineTooltipHideTimer) { clearTimeout(timelineTooltipHideTimer); timelineTooltipHideTimer = null; }
+    });
+    timelineTooltipEl.addEventListener("mouseleave", scheduleHideTimelineTooltip);
+    document.body.appendChild(timelineTooltipEl);
+    return timelineTooltipEl;
+  }
+
+  function showTimelineTooltip(anchorEl, stage) {
+    if (timelineTooltipHideTimer) { clearTimeout(timelineTooltipHideTimer); timelineTooltipHideTimer = null; }
+    var tooltip = ensureTimelineTooltip();
+    tooltip.innerHTML = '<div class="timeline-tooltip-title">' + formatText(stage.what) + "</div>" +
+      renderLaneBreakdownList(stage);
+    tooltip.querySelectorAll("[data-box-id]").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        e.stopPropagation();
+        hideTimelineTooltip();
+        openPanelById(el.dataset.boxId);
+      });
+    });
+
+    tooltip.classList.add("is-visible");
+    var anchorRect = anchorEl.getBoundingClientRect();
+    var tooltipRect = tooltip.getBoundingClientRect();
+    var left = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8));
+    var top = anchorRect.bottom + 8;
+    tooltip.style.left = left + "px";
+    tooltip.style.top = top + "px";
+  }
+
+  function hideTimelineTooltip() {
+    if (timelineTooltipEl) timelineTooltipEl.classList.remove("is-visible");
+  }
+
+  function scheduleHideTimelineTooltip() {
+    if (timelineTooltipHideTimer) clearTimeout(timelineTooltipHideTimer);
+    timelineTooltipHideTimer = setTimeout(hideTimelineTooltip, 120);
   }
 
   function renderTimelineGroup(title, summary, stages) {
@@ -557,50 +621,36 @@
       (summary ? '<p class="journey-summary">' + formatText(summary) + "</p>" : "");
     section.appendChild(head);
 
-    var table = document.createElement("div");
-    table.className = "timeline-table";
+    var scroll = document.createElement("div");
+    scroll.className = "timeline-flow-scroll";
+    var flow = document.createElement("div");
+    flow.className = "timeline-flow";
 
-    var headerRow = document.createElement("div");
-    headerRow.className = "timeline-header-row";
-    var corner = document.createElement("div");
-    corner.className = "timeline-corner";
-    headerRow.appendChild(corner);
     stages.forEach(function (stage) {
+      var step = document.createElement("div");
+      step.className = "timeline-flow-step";
+
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "timeline-stage-header" + (stage.light ? " timeline-stage-header-light" : "");
+      btn.className = "timeline-flow-node";
       btn.dataset.panelId = "stage-" + stage.id;
       btn.innerHTML =
-        '<div class="stage-when">' + formatText(stage.when) + "</div>" +
-        '<div class="stage-what">' + formatText(stage.what) + "</div>";
+        '<span class="timeline-when">' + formatText(stage.when) + "</span>" +
+        '<span class="timeline-dot' + (stage.light ? " timeline-dot-light" : "") + '"></span>' +
+        '<span class="timeline-what">' + formatText(stage.what) + "</span>" +
+        renderTimelineStatusStrip(stage);
       btn.addEventListener("click", function () { openPanelById(btn.dataset.panelId); });
-      headerRow.appendChild(btn);
-    });
-    table.appendChild(headerRow);
+      btn.addEventListener("mouseenter", function () { showTimelineTooltip(btn, stage); });
+      btn.addEventListener("mouseleave", scheduleHideTimelineTooltip);
+      btn.addEventListener("focus", function () { showTimelineTooltip(btn, stage); });
+      btn.addEventListener("blur", scheduleHideTimelineTooltip);
 
-    content.lanes.forEach(function (lane) {
-      var row = document.createElement("div");
-      row.className = "timeline-lane-row";
-      var label = document.createElement("div");
-      label.className = "timeline-lane-label lane-" + lane.id;
-      label.innerHTML = '<div class="lane-name">' + formatText(lane.name) + "</div>" +
-        '<div class="lane-sub">' + formatText(lane.sub) + "</div>";
-      row.appendChild(label);
-
-      stages.forEach(function (stage) {
-        var box = boxById[stage.id + "-" + lane.id];
-        row.appendChild(renderTimelineNode(box));
-      });
-
-      table.appendChild(row);
+      step.appendChild(btn);
+      flow.appendChild(step);
     });
 
-    section.appendChild(table);
-
-    section.querySelectorAll("[data-box-id]").forEach(function (el) {
-      el.addEventListener("click", function () { openPanelById(el.dataset.boxId); });
-    });
-
+    scroll.appendChild(flow);
+    section.appendChild(scroll);
     return section;
   }
 
@@ -626,6 +676,7 @@
 
   function switchView(view) {
     var isTimeline = view === "timeline";
+    hideTimelineTooltip();
     document.getElementById("view-grid").hidden = isTimeline;
     document.getElementById("view-timeline").hidden = !isTimeline;
     var gridTab = document.getElementById("tab-grid");
@@ -787,6 +838,7 @@
     html += '<dt>Note</dt><dd data-field="note"' + editableAttr() + ">" +
       (editMode ? escapeHtml(stage.note) : formatText(stage.note)) + "</dd>";
     html += "</dl>";
+    html += '<div class="panel-section"><h3>Who\'s doing what</h3>' + renderLaneBreakdownList(stage) + "</div>";
     return html;
   }
 
@@ -1091,6 +1143,9 @@
       attachStepListeners(boxById[id]);
     } else if (entry.kind === "stage") {
       attachEditableListeners("stage:" + stageById[entry.stageId].id);
+      document.querySelectorAll("#panel-content [data-box-id]").forEach(function (el) {
+        el.addEventListener("click", function () { openPanelById(el.dataset.boxId); });
+      });
     }
 
     var panel = document.getElementById("panel");

@@ -597,7 +597,21 @@
     var tooltipRect = tooltip.getBoundingClientRect();
     var left = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - tooltipRect.width - 8));
-    var top = anchorRect.bottom + 8;
+
+    // Fixed positioning doesn't scroll with the page, so a tooltip placed
+    // below a node near the bottom of a short page can render off-screen
+    // with no way to scroll to it. Flip above when there isn't room below
+    // but there is above; otherwise clamp to the viewport as a fallback.
+    var spaceBelow = window.innerHeight - anchorRect.bottom;
+    var spaceAbove = anchorRect.top;
+    var top;
+    if (tooltipRect.height + 8 > spaceBelow && spaceAbove > spaceBelow) {
+      top = anchorRect.top - tooltipRect.height - 8;
+    } else {
+      top = anchorRect.bottom + 8;
+    }
+    top = Math.max(8, Math.min(top, window.innerHeight - tooltipRect.height - 8));
+
     tooltip.style.left = left + "px";
     tooltip.style.top = top + "px";
   }

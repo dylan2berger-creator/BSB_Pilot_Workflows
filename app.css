@@ -165,6 +165,28 @@ button {
   flex-wrap: wrap;
 }
 
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px 10px;
+}
+.view-tab {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+}
+.view-tab:hover { background: var(--color-surface-alt); color: var(--color-text); }
+.view-tab.is-active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
 .btn {
   border: 1px solid var(--color-hairline);
   background: var(--color-surface);
@@ -404,6 +426,158 @@ button {
 .lane-bsb { background: var(--color-lane-bsb); color: var(--color-lane-bsb-text); }
 .lane-shop { background: var(--color-lane-shop); color: var(--color-lane-shop-text); }
 .lane-contact-center { background: var(--color-lane-contact-center); color: var(--color-lane-contact-center-text); }
+
+/* ---------- Leadership timeline ---------- */
+.timeline-group {
+  margin-top: 28px;
+}
+.timeline-group:first-child {
+  margin-top: 0;
+}
+.timeline-table {
+  overflow-x: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.timeline-header-row,
+.timeline-lane-row {
+  display: flex;
+  min-width: max-content;
+}
+.timeline-header-row {
+  border-bottom: 1px solid var(--color-hairline);
+}
+.timeline-lane-row {
+  position: relative;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.timeline-lane-row:last-child {
+  border-bottom: none;
+}
+.timeline-lane-row::before {
+  /* Aligned to the dot's own center: .timeline-node-cell's 14px top
+     padding plus half the 16px .timeline-dot -- not the row's vertical
+     midpoint, which sits lower (the label line pulls it down). */
+  content: "";
+  position: absolute;
+  left: 190px;
+  right: 16px;
+  top: 22px;
+  height: 2px;
+  background: var(--color-hairline);
+}
+.timeline-corner,
+.timeline-lane-label {
+  flex: none;
+  width: 190px;
+  box-sizing: border-box;
+}
+.timeline-corner {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-hairline);
+}
+.timeline-lane-label {
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 12px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+.timeline-lane-label .lane-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+.timeline-lane-label .lane-sub {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.timeline-stage-header {
+  flex: 1 1 140px;
+  min-width: 140px;
+  background: var(--color-stage);
+  color: var(--color-stage-text);
+  cursor: pointer;
+  border: none;
+  border-left: 1px solid var(--color-hairline);
+  text-align: left;
+  font-family: inherit;
+  padding: 10px 12px;
+}
+.timeline-stage-header:hover { filter: brightness(1.08); }
+.timeline-stage-header-light { filter: brightness(1.3); }
+.timeline-stage-header-light:hover { filter: brightness(1.4); }
+.timeline-stage-header .stage-when {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.timeline-stage-header .stage-what {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 4px;
+  line-height: 1.25;
+}
+.timeline-node-cell {
+  flex: 1 1 140px;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  position: relative;
+  z-index: 1;
+}
+.timeline-node-empty {
+  color: var(--color-text-secondary);
+}
+.timeline-node {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  font-family: inherit;
+  width: 100%;
+}
+.timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--tl-color, var(--color-accent));
+  box-shadow: 0 0 0 4px var(--color-surface);
+}
+.timeline-node-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text);
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.timeline-node:hover .timeline-node-label {
+  text-decoration: underline;
+}
+.timeline-node.is-quiet .timeline-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--color-legend-quiet);
+}
+.timeline-node.is-quiet .timeline-node-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
 
 .card {
   width: 100%;

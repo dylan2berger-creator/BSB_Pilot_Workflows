@@ -516,6 +516,124 @@
     renderGridInto("grid-estimate-followup", content.stages.slice(splitIndex));
     renderJourneyMap("journey-new-assignment", "new-assignment");
     renderJourneyMap("journey-estimate-followup", "estimate-followup");
+    renderLeadershipTimeline();
+  }
+
+  // ---------------------------------------------------------------------
+  // Leadership timeline -- a leaner, presentation-facing read of the same
+  // lanes/stages/boxes data as the grid: one swimlane per participant
+  // (Customer, BSB, Shop, Contact Center) across a shared time axis, split
+  // into the same "New Assignment" / "12-Day Follow-up" groups as the
+  // grid. No new data, no edit affordances -- just a different shape on
+  // the same content, so it can never drift out of sync with the grid.
+  // Clicking a node opens the exact same detail panel the grid uses.
+  // ---------------------------------------------------------------------
+  function renderTimelineNode(box) {
+    var wrap = document.createElement("div");
+    wrap.className = "timeline-node-cell";
+    if (!box) {
+      wrap.innerHTML = '<span class="timeline-node-empty">&mdash;</span>';
+      return wrap;
+    }
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "timeline-node" + (box.quiet ? " is-quiet" : "");
+    btn.style.setProperty("--tl-color", laneColorVar(box.lane));
+    btn.dataset.boxId = box.id;
+    btn.innerHTML =
+      '<span class="timeline-dot"></span>' +
+      '<span class="timeline-node-label">' + formatText(box.head) + "</span>";
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  function renderTimelineGroup(title, summary, stages) {
+    var section = document.createElement("section");
+    section.className = "timeline-group";
+
+    var head = document.createElement("div");
+    head.className = "journey-head";
+    head.innerHTML = '<h2 class="journey-title">' + formatText(title) + "</h2>" +
+      (summary ? '<p class="journey-summary">' + formatText(summary) + "</p>" : "");
+    section.appendChild(head);
+
+    var table = document.createElement("div");
+    table.className = "timeline-table";
+
+    var headerRow = document.createElement("div");
+    headerRow.className = "timeline-header-row";
+    var corner = document.createElement("div");
+    corner.className = "timeline-corner";
+    headerRow.appendChild(corner);
+    stages.forEach(function (stage) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "timeline-stage-header" + (stage.light ? " timeline-stage-header-light" : "");
+      btn.dataset.panelId = "stage-" + stage.id;
+      btn.innerHTML =
+        '<div class="stage-when">' + formatText(stage.when) + "</div>" +
+        '<div class="stage-what">' + formatText(stage.what) + "</div>";
+      btn.addEventListener("click", function () { openPanelById(btn.dataset.panelId); });
+      headerRow.appendChild(btn);
+    });
+    table.appendChild(headerRow);
+
+    content.lanes.forEach(function (lane) {
+      var row = document.createElement("div");
+      row.className = "timeline-lane-row";
+      var label = document.createElement("div");
+      label.className = "timeline-lane-label lane-" + lane.id;
+      label.innerHTML = '<div class="lane-name">' + formatText(lane.name) + "</div>" +
+        '<div class="lane-sub">' + formatText(lane.sub) + "</div>";
+      row.appendChild(label);
+
+      stages.forEach(function (stage) {
+        var box = boxById[stage.id + "-" + lane.id];
+        row.appendChild(renderTimelineNode(box));
+      });
+
+      table.appendChild(row);
+    });
+
+    section.appendChild(table);
+
+    section.querySelectorAll("[data-box-id]").forEach(function (el) {
+      el.addEventListener("click", function () { openPanelById(el.dataset.boxId); });
+    });
+
+    return section;
+  }
+
+  function renderLeadershipTimeline() {
+    var container = document.getElementById("view-timeline");
+    if (!container) return;
+    var splitIndex = Math.min(STAGE_GROUP_SPLIT, content.stages.length);
+    var newAssignmentJourney = content.journeys.filter(function (j) { return j.id === "new-assignment"; })[0];
+    var followupJourney = content.journeys.filter(function (j) { return j.id === "estimate-followup"; })[0];
+
+    container.innerHTML = "";
+    container.appendChild(renderTimelineGroup(
+      "New Assignment",
+      newAssignmentJourney ? newAssignmentJourney.summary : "",
+      content.stages.slice(0, splitIndex)
+    ));
+    container.appendChild(renderTimelineGroup(
+      "12-Day Follow-up",
+      followupJourney ? followupJourney.summary : "",
+      content.stages.slice(splitIndex)
+    ));
+  }
+
+  function switchView(view) {
+    var isTimeline = view === "timeline";
+    document.getElementById("view-grid").hidden = isTimeline;
+    document.getElementById("view-timeline").hidden = !isTimeline;
+    var gridTab = document.getElementById("tab-grid");
+    var timelineTab = document.getElementById("tab-timeline");
+    gridTab.classList.toggle("is-active", !isTimeline);
+    gridTab.setAttribute("aria-pressed", String(!isTimeline));
+    timelineTab.classList.toggle("is-active", isTimeline);
+    timelineTab.setAttribute("aria-pressed", String(isTimeline));
   }
 
   function renderCard(box, lane) {
@@ -1338,6 +1456,9 @@
     });
 
     document.getElementById("edit-toggle").addEventListener("click", toggleEditMode);
+
+    document.getElementById("tab-grid").addEventListener("click", function () { switchView("grid"); });
+    document.getElementById("tab-timeline").addEventListener("click", function () { switchView("timeline"); });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {

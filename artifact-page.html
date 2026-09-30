@@ -18,9 +18,13 @@
       </button>
     </div>
   </div>
+  <nav class="view-tabs" aria-label="Page view">
+    <button id="tab-grid" class="view-tab is-active" type="button" aria-pressed="true">Process Grid</button>
+    <button id="tab-timeline" class="view-tab" type="button" aria-pressed="false">Leadership Timeline</button>
+  </nav>
 </header>
 
-<main class="main">
+<main class="main" id="view-grid">
   <section class="stage-group" aria-label="New Assignment">
     <div id="journey-new-assignment" class="journey"></div>
     <div class="grid-scroll">
@@ -36,6 +40,8 @@
   </section>
 
 </main>
+
+<main class="main" id="view-timeline" hidden></main>
 
 <div id="panel-backdrop" class="panel-backdrop" hidden></div>
 <aside id="panel" class="panel" hidden aria-hidden="true">

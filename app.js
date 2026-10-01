@@ -445,7 +445,7 @@
       (journey.summary ? '<p class="journey-summary">' + formatText(journey.summary) + "</p>" : "") +
       "</div>";
 
-    html += '<div class="journey-scroll"><div class="journey-flow-row"><div class="journey-flow">';
+    html += '<div class="journey-scroll"><div class="journey-flow">';
     journey.steps.forEach(function (step) {
       var stageAttr = step.stage ? ' data-stage-id="' + escapeHtml(step.stage) + '" tabindex="0"' : "";
       if (step.lane === "quiet") {
@@ -466,27 +466,28 @@
         (step.how ? '<div class="journey-how">' + formatText(step.how) + "</div>" : "") +
         "</div>";
     });
-    html += "</div>";
+    html += "</div></div>";
 
-    // The fork is a branch off the main sequence, not another step in it
-    // -- rendered as a sibling of .journey-flow (own connecting line) so
-    // it reads as "...or, at any point, this happens instead" rather than
-    // a continuation of the timeline.
+    // The fork is a deliberately separate, unconnected card -- "customer
+    // books" isn't a point in the sequence, it can happen at any time
+    // across the whole flow, so it shouldn't look like it's wired into
+    // one specific spot on the timeline.
     if (journey.fork) {
       var fork = journey.fork;
+      var forkStage = fork.stage ? stageById[fork.stage] : null;
       var forkStageAttr = fork.stage ? ' data-stage-id="' + escapeHtml(fork.stage) + '" tabindex="0"' : "";
-      html += '<div class="journey-fork"' + forkStageAttr + '>' +
-        '<div class="journey-when">' + formatText(fork.when) + "</div>" +
-        '<div class="journey-fork-dot"></div>' +
-        '<div class="journey-fork-title">' + formatText(fork.title) + "</div>" +
-        (fork.how ? '<div class="journey-how">' + formatText(fork.how) + "</div>" : "") +
+      html += '<div class="journey-fork">' +
+        '<button type="button" class="journey-fork-head"' + forkStageAttr + '>' +
+        '<span class="journey-fork-eyebrow">' + formatText(fork.when) + "</span>" +
+        '<span class="journey-fork-title">' + formatText(fork.title) + "</span>" +
+        "</button>" +
+        (forkStage ? renderLaneBreakdownList(forkStage, STEP_TOOLTIP_LANES) : "") +
         "</div>";
     }
-    html += "</div></div>";
 
     container.innerHTML = html;
 
-    container.querySelectorAll("[data-stage-id]").forEach(function (el) {
+    container.querySelectorAll(".journey-step[data-stage-id]").forEach(function (el) {
       var stage = stageById[el.dataset.stageId];
       if (!stage) return;
       el.addEventListener("mouseenter", function () { showStepTooltip(el, stage); });
@@ -495,41 +496,13 @@
       el.addEventListener("blur", scheduleHideStepTooltip);
     });
 
-    if (journey.fork) drawJourneyForkConnector(container);
-  }
-
-  // Draws the curved branch line from the last main-sequence dot to the
-  // fork dot, measured from actual rendered positions (not guessed CSS
-  // offsets) so it stays correctly anchored to both endpoints no matter
-  // how many steps precede it or how wide the fork's own content is.
-  function drawJourneyForkConnector(container) {
-    var row = container.querySelector(".journey-flow-row");
-    var lastDot = container.querySelector(".journey-flow > *:last-child .journey-dot");
-    var forkDot = container.querySelector(".journey-fork-dot");
-    if (!row || !lastDot || !forkDot) return;
-
-    var rowRect = row.getBoundingClientRect();
-    var fromRect = lastDot.getBoundingClientRect();
-    var toRect = forkDot.getBoundingClientRect();
-
-    var x1 = fromRect.right - rowRect.left;
-    var y1 = fromRect.top + fromRect.height / 2 - rowRect.top;
-    var x2 = toRect.left - rowRect.left;
-    var y2 = toRect.top + toRect.height / 2 - rowRect.top;
-    var midX = x1 + (x2 - x1) / 2;
-
-    var svgNs = "http://www.w3.org/2000/svg";
-    var svg = document.createElementNS(svgNs, "svg");
-    svg.setAttribute("class", "journey-fork-svg");
-    svg.setAttribute("width", Math.max(x2, row.scrollWidth));
-    svg.setAttribute("height", Math.max(y2, row.scrollHeight) + 4);
-
-    var path = document.createElementNS(svgNs, "path");
-    path.setAttribute("class", "journey-fork-connector");
-    path.setAttribute("d", "M " + x1 + "," + y1 + " C " + midX + "," + y1 + " " + midX + "," + y2 + " " + x2 + "," + y2);
-    svg.appendChild(path);
-
-    row.appendChild(svg);
+    var forkHead = container.querySelector(".journey-fork-head[data-stage-id]");
+    if (forkHead) {
+      forkHead.addEventListener("click", function () { openPanelById("stage-" + forkHead.dataset.stageId); });
+    }
+    container.querySelectorAll(".journey-fork [data-box-id]").forEach(function (el) {
+      el.addEventListener("click", function () { openPanelById(el.dataset.boxId); });
+    });
   }
 
   // The grid is split into two sections -- "New Assignment" (the first 5

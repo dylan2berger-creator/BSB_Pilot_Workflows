@@ -278,28 +278,10 @@ button {
   overflow-x: auto;
   padding-top: 20px;
 }
-.journey-flow-row {
-  display: flex;
-  align-items: flex-start;
-  width: max-content;
-  position: relative;
-}
-.journey-fork-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  overflow: visible;
-  pointer-events: none;
-}
-.journey-fork-connector {
-  fill: none;
-  stroke: var(--color-hairline);
-  stroke-width: 2;
-}
 .journey-flow {
   display: flex;
   align-items: flex-start;
-  flex: none;
+  width: max-content;
   position: relative;
 }
 .journey-flow::before {
@@ -312,30 +294,46 @@ button {
   background: var(--color-hairline);
 }
 
-/* The fork is a sibling of .journey-flow, not one of its steps -- it
-   branches off the end of the main line rather than continuing it, so
-   it reads as "...or, at any point, this happens instead." */
+/* The fork is a deliberately separate card, not wired into the timeline
+   -- "customer books" isn't a point in the sequence, it can happen at
+   any time across the whole flow. */
 .journey-fork {
-  position: relative;
-  width: 150px;
-  flex: none;
-  padding-inline: 6px;
-  text-align: center;
-  margin-top: 50px;
+  margin-top: 16px;
+  max-width: 420px;
+  background: var(--color-page);
+  border: 1px solid var(--color-hairline);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius);
+  padding: 12px 14px;
 }
-.journey-fork-dot {
-  margin: 6px auto 6px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  position: relative;
-  z-index: 1;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 4px var(--color-page);
+.journey-fork-head {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 0 0 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.journey-fork-head:hover .journey-fork-title,
+.journey-fork-head:focus-visible .journey-fork-title {
+  text-decoration: underline;
+}
+.journey-fork-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
 }
 .journey-fork-title {
-  font-weight: 700;
-  font-size: 13px;
+  display: block;
+  font-weight: 800;
+  font-size: 15px;
   color: var(--color-text);
   margin-top: 2px;
 }
@@ -457,15 +455,12 @@ button {
    hovering or focusing it can show what BSB, Shop, and Contact Center are
    each doing (or not doing) at that point -- reusing the same box data
    the grid itself renders from. */
-.journey-step[data-stage-id],
-.journey-fork[data-stage-id] {
+.journey-step[data-stage-id] {
   cursor: pointer;
   border-radius: var(--radius);
 }
 .journey-step[data-stage-id]:hover,
-.journey-step[data-stage-id]:focus-visible,
-.journey-fork[data-stage-id]:hover,
-.journey-fork[data-stage-id]:focus-visible {
+.journey-step[data-stage-id]:focus-visible {
   background: var(--color-surface-alt);
 }
 

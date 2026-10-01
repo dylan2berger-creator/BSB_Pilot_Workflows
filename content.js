@@ -525,7 +525,7 @@ window.BSB_CONTENT = {
         { lane: "bsb", when: "+16 hrs", who: "BSB", title: "Third nudge", how: "Text + email", stage: "s3" },
         { lane: "contact-center", when: "Hour 24+", who: "Contact Center", title: "First call from a person", how: "Phone", stage: "s4" }
       ],
-      fork: { when: "Can happen at any point above", title: "Customer Books", stage: "s4b" }
+      fork: { when: "Any Time", title: "Customer Books", how: "BSB notifies the shop", stage: "s4b" }
     },
     {
       id: "estimate-followup",
@@ -545,7 +545,7 @@ window.BSB_CONTENT = {
         { lane: "bsb", when: "Day 11", who: "BSB", title: "Follow-up", how: "Text + email", stage: "s5" },
         { lane: "shop", when: "Day 12", who: "Shop CSR", title: "Last phone call", how: "BSB prompts CSR", stage: "s6" }
       ],
-      fork: { when: "Can happen at any point above", title: "Customer Books", stage: "s6b" }
+      fork: { when: "Any Time", title: "Customer Books", how: "Shop updates the RO", stage: "s6b" }
     }
   ]
 };

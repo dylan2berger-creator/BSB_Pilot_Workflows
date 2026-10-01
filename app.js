@@ -470,10 +470,11 @@
     });
   }
 
-  // The grid is split into two sections -- "New Assignment" (the first 4
-  // stages) and "Estimate Follow-up" (everything after that) -- each with
-  // its own journey map and its own grid, rendered independently.
-  var STAGE_GROUP_SPLIT = 4;
+  // The grid is split into two sections -- "New Assignment" (the first 5
+  // stages, including the "Customer Books" resolution stage) and
+  // "Estimate Follow-up" (everything after that) -- each with its own
+  // journey map and its own grid, rendered independently.
+  var STAGE_GROUP_SPLIT = 5;
 
   function renderGridInto(gridElId, stages) {
     var grid = document.getElementById(gridElId);

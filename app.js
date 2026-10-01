@@ -494,6 +494,42 @@
       el.addEventListener("focus", function () { showStepTooltip(el, stage); });
       el.addEventListener("blur", scheduleHideStepTooltip);
     });
+
+    if (journey.fork) drawJourneyForkConnector(container);
+  }
+
+  // Draws the curved branch line from the last main-sequence dot to the
+  // fork dot, measured from actual rendered positions (not guessed CSS
+  // offsets) so it stays correctly anchored to both endpoints no matter
+  // how many steps precede it or how wide the fork's own content is.
+  function drawJourneyForkConnector(container) {
+    var row = container.querySelector(".journey-flow-row");
+    var lastDot = container.querySelector(".journey-flow > *:last-child .journey-dot");
+    var forkDot = container.querySelector(".journey-fork-dot");
+    if (!row || !lastDot || !forkDot) return;
+
+    var rowRect = row.getBoundingClientRect();
+    var fromRect = lastDot.getBoundingClientRect();
+    var toRect = forkDot.getBoundingClientRect();
+
+    var x1 = fromRect.right - rowRect.left;
+    var y1 = fromRect.top + fromRect.height / 2 - rowRect.top;
+    var x2 = toRect.left - rowRect.left;
+    var y2 = toRect.top + toRect.height / 2 - rowRect.top;
+    var midX = x1 + (x2 - x1) / 2;
+
+    var svgNs = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgNs, "svg");
+    svg.setAttribute("class", "journey-fork-svg");
+    svg.setAttribute("width", Math.max(x2, row.scrollWidth));
+    svg.setAttribute("height", Math.max(y2, row.scrollHeight) + 4);
+
+    var path = document.createElementNS(svgNs, "path");
+    path.setAttribute("class", "journey-fork-connector");
+    path.setAttribute("d", "M " + x1 + "," + y1 + " C " + midX + "," + y1 + " " + midX + "," + y2 + " " + x2 + "," + y2);
+    svg.appendChild(path);
+
+    row.appendChild(svg);
   }
 
   // The grid is split into two sections -- "New Assignment" (the first 5

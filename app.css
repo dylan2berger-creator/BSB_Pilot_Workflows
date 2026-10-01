@@ -282,6 +282,19 @@ button {
   display: flex;
   align-items: flex-start;
   width: max-content;
+  position: relative;
+}
+.journey-fork-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.journey-fork-connector {
+  fill: none;
+  stroke: var(--color-hairline);
+  stroke-width: 2;
 }
 .journey-flow {
   display: flex;
@@ -309,21 +322,6 @@ button {
   padding-inline: 6px;
   text-align: center;
   margin-top: 50px;
-}
-.journey-fork::before {
-  /* A corner-bracket connector dropping from the main line's height
-     (21px, matching .journey-flow::before's top) down to this node's
-     dot. Anchored to .journey-fork's own box so it works regardless of
-     how many steps precede it in .journey-flow. */
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: -29px;
-  width: 24px;
-  height: 29px;
-  border-left: 2px solid var(--color-hairline);
-  border-bottom: 2px solid var(--color-hairline);
-  border-bottom-left-radius: 10px;
 }
 .journey-fork-dot {
   margin: 6px auto 6px;

@@ -278,10 +278,15 @@ button {
   overflow-x: auto;
   padding-top: 20px;
 }
-.journey-flow {
+.journey-flow-row {
   display: flex;
   align-items: flex-start;
   width: max-content;
+}
+.journey-flow {
+  display: flex;
+  align-items: flex-start;
+  flex: none;
   position: relative;
 }
 .journey-flow::before {
@@ -292,6 +297,49 @@ button {
   top: 21px;
   height: 2px;
   background: var(--color-hairline);
+}
+
+/* The fork is a sibling of .journey-flow, not one of its steps -- it
+   branches off the end of the main line rather than continuing it, so
+   it reads as "...or, at any point, this happens instead." */
+.journey-fork {
+  position: relative;
+  width: 150px;
+  flex: none;
+  padding-inline: 6px;
+  text-align: center;
+  margin-top: 50px;
+}
+.journey-fork::before {
+  /* A corner-bracket connector dropping from the main line's height
+     (21px, matching .journey-flow::before's top) down to this node's
+     dot. Anchored to .journey-fork's own box so it works regardless of
+     how many steps precede it in .journey-flow. */
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: -29px;
+  width: 24px;
+  height: 29px;
+  border-left: 2px solid var(--color-hairline);
+  border-bottom: 2px solid var(--color-hairline);
+  border-bottom-left-radius: 10px;
+}
+.journey-fork-dot {
+  margin: 6px auto 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-page);
+}
+.journey-fork-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text);
+  margin-top: 2px;
 }
 .journey-step {
   position: relative;
@@ -411,12 +459,15 @@ button {
    hovering or focusing it can show what BSB, Shop, and Contact Center are
    each doing (or not doing) at that point -- reusing the same box data
    the grid itself renders from. */
-.journey-step[data-stage-id] {
+.journey-step[data-stage-id],
+.journey-fork[data-stage-id] {
   cursor: pointer;
   border-radius: var(--radius);
 }
 .journey-step[data-stage-id]:hover,
-.journey-step[data-stage-id]:focus-visible {
+.journey-step[data-stage-id]:focus-visible,
+.journey-fork[data-stage-id]:hover,
+.journey-fork[data-stage-id]:focus-visible {
   background: var(--color-surface-alt);
 }
 

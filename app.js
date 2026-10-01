@@ -235,11 +235,21 @@
             });
           });
         }
+        var fork = null;
+        if (j.fork && typeof j.fork === "object" && typeof j.fork.when === "string" && typeof j.fork.title === "string") {
+          fork = {
+            when: j.fork.when,
+            title: j.fork.title,
+            how: typeof j.fork.how === "string" ? j.fork.how : "",
+            stage: typeof j.fork.stage === "string" ? j.fork.stage : ""
+          };
+        }
         result.journeys.push({
           id: j.id,
           title: typeof j.title === "string" ? j.title : j.id,
           summary: typeof j.summary === "string" ? j.summary : "",
-          steps: steps
+          steps: steps,
+          fork: fork
         });
       });
     }
@@ -435,7 +445,7 @@
       (journey.summary ? '<p class="journey-summary">' + formatText(journey.summary) + "</p>" : "") +
       "</div>";
 
-    html += '<div class="journey-scroll"><div class="journey-flow">';
+    html += '<div class="journey-scroll"><div class="journey-flow-row"><div class="journey-flow">';
     journey.steps.forEach(function (step) {
       var stageAttr = step.stage ? ' data-stage-id="' + escapeHtml(step.stage) + '" tabindex="0"' : "";
       if (step.lane === "quiet") {
@@ -456,11 +466,27 @@
         (step.how ? '<div class="journey-how">' + formatText(step.how) + "</div>" : "") +
         "</div>";
     });
+    html += "</div>";
+
+    // The fork is a branch off the main sequence, not another step in it
+    // -- rendered as a sibling of .journey-flow (own connecting line) so
+    // it reads as "...or, at any point, this happens instead" rather than
+    // a continuation of the timeline.
+    if (journey.fork) {
+      var fork = journey.fork;
+      var forkStageAttr = fork.stage ? ' data-stage-id="' + escapeHtml(fork.stage) + '" tabindex="0"' : "";
+      html += '<div class="journey-fork"' + forkStageAttr + '>' +
+        '<div class="journey-when">' + formatText(fork.when) + "</div>" +
+        '<div class="journey-fork-dot"></div>' +
+        '<div class="journey-fork-title">' + formatText(fork.title) + "</div>" +
+        (fork.how ? '<div class="journey-how">' + formatText(fork.how) + "</div>" : "") +
+        "</div>";
+    }
     html += "</div></div>";
 
     container.innerHTML = html;
 
-    container.querySelectorAll(".journey-step[data-stage-id]").forEach(function (el) {
+    container.querySelectorAll("[data-stage-id]").forEach(function (el) {
       var stage = stageById[el.dataset.stageId];
       if (!stage) return;
       el.addEventListener("mouseenter", function () { showStepTooltip(el, stage); });
@@ -1409,7 +1435,13 @@
             (s.stage ? ", stage: " + jsString(s.stage) : "") +
             " }" + (si < j.steps.length - 1 ? "," : ""));
         });
-        out.push("      ]");
+        out.push("      ]" + (j.fork ? "," : ""));
+        if (j.fork) {
+          out.push("      fork: { when: " + jsString(j.fork.when) + ", title: " + jsString(j.fork.title) +
+            (j.fork.how ? ", how: " + jsString(j.fork.how) : "") +
+            (j.fork.stage ? ", stage: " + jsString(j.fork.stage) : "") +
+            " }");
+        }
         out.push("    }" + (ji < data.journeys.length - 1 ? "," : ""));
       });
       out.push("  ]");
